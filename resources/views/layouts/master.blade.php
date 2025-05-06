@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>MKM Inventory System</title>
+        <title>MKM Your Apps System</title>
         <link href="{{asset('assets/css/styles.css')}}" rel="stylesheet" />
         <link rel="icon" href="{{ asset('assets/img/mms.png') }}">
 

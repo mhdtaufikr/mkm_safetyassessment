@@ -8,7 +8,7 @@
     <div class="ms-2 preloader flex-column justify-content-center align-items-center">
         <a id="navbarDropdownUserImage" href="##"><img class="animation__shake" src="{{ asset('assets/img/topbar.png') }}" alt="MKM Logo" height="40%" width="40%"> </a>
     </div>
-    <h1 style="margin-left: -160px">MKM Inventory</h1>
+    <h1 style="margin-left: -160px">MKM Your Apps</h1>
 
     <!-- Navbar Items-->
     <ul class="navbar-nav align-items-center ms-auto">
