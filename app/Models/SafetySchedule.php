@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class SafetySchedule extends Model
 {
     use HasFactory;
-
+    protected $guarded = ['id'];
     public function shop()
 {
     return $this->belongsTo(MasterShop::class, 'shop_id');

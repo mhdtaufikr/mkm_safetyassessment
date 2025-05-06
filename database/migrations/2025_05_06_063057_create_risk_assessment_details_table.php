@@ -16,8 +16,7 @@ class CreateRiskAssessmentDetailsTable extends Migration
         Schema::create('risk_assessment_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('risk_assessment_header_id')->constrained()->onDelete('cascade');
-            $table->text('finding_problem');
-            $table->text('potential_hazards')->nullable();
+
             $table->text('countermeasure')->nullable();
             $table->date('genba_date')->nullable();
             $table->string('shop')->nullable();
@@ -37,6 +36,7 @@ class CreateRiskAssessmentDetailsTable extends Migration
             $table->timestamps();
         });
     }
+
 
 
     /**
