@@ -126,9 +126,9 @@
                     @endphp
                     @foreach ($rules as $data)
                     <tr>
-                        <td>{{ $no++ }}</td>
-                        <td>{{ $data->rule_name }}</td>
-                        <td>{{ $data->rule_value }}</td>
+                    <td>{{ $assessment->shop->name ?? 'N/A' }}</td>
+        <td>{{ $assessment->risk_level }}</td>
+        <td>{{ $assessment->created_at->format('d M Y') }}</td>{ $data->rule_value }}</td>
                         <td>
                             <button title="Edit Rule" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-update{{ $data->id }}">
                                 <i class="fas fa-edit"></i>

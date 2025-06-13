@@ -18,6 +18,7 @@ class CreateRiskAssessmentHeadersTable extends Migration
             $table->string('scope_number')->nullable(); // Scope (Number)
             $table->text('finding_problem');
             $table->text('potential_hazards')->nullable();
+            $table->text('accessor')->nullable();
             $table->unsignedTinyInteger('severity')->nullable();
             $table->unsignedTinyInteger('possibility')->nullable();
             $table->unsignedTinyInteger('score')->nullable();

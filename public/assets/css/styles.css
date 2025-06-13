@@ -5973,6 +5973,22 @@ border-color: rgb(90, 137, 178, 1);
   border: 1px solid rgba(33, 40, 50, 0.125);
   border-radius: 0.35rem;
 }
+
+.card-entry {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    background-color: #fff;
+}
+
+.card-entry h6 {
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+    margin-bottom: 1rem;
+}
+
+
 .card > hr {
   margin-right: 0;
   margin-left: 0;

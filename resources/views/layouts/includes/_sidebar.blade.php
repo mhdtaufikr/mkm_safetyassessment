@@ -7,9 +7,30 @@
                 <!-- Sidenav Link (Home)-->
                 <a class="nav-link" href="{{ url('/home') }}">
                     <div class="nav-link-icon"><i class="fas fa-fw fa-home"></i></div>
-                    Home
+                    Safety Assessment
+                </a>
+                <a class="nav-link" href="{{ route('saudit.index') }}">
+                    <div class="nav-link-icon"><i class="fas fa-fw fa-home"></i></div>
+                    5S
                 </a>
                 @if(\Auth::user()->role === 'IT')
+                <!-- Sidenav Menu Heading (Master) -->
+<div class="sidenav-menu-heading">Master</div>
+
+<!-- Master Shop Menu (Collapsible) -->
+<a class="nav-link collapsed" href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseMasterShop" aria-expanded="false" aria-controls="collapseMasterShop">
+    <div class="nav-link-icon"><i data-feather="tool"></i></div>
+    Master Shop
+    <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+</a>
+<div class="collapse" id="collapseMasterShop" data-bs-parent="#sidenavAccordion">
+    <nav class="sidenav-menu-nested nav">
+        <a class="nav-link" href="{{ route('shop.create') }}">Add Shop</a>
+    </nav>
+</div>
+
+
+
                 <!-- Sidenav Menu Heading (Configuration) -->
                 <div class="sidenav-menu-heading">Configuration</div>
 

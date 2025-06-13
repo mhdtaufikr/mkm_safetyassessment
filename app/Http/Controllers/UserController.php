@@ -10,16 +10,16 @@ use Illuminate\Http\Request;
 class UserController extends Controller
 {
     public function index()
-    {
-        $user = User::get();
-        $dropdown = Dropdown::where('category','Role')
-        ->get();
-        $types = Dropdown::where('category','Category')
-        ->get();
-        $plants = Dropdown::where('category','Plant')
-        ->get();
-        return view('users.index',compact('user','dropdown','types','plants'));
-    }
+{
+    $user = User::get();
+    $dropdown = Dropdown::where('category','Role')->get();
+    $types = Dropdown::where('category','Category')->get();
+    $plants = Dropdown::where('category','Plant')->get();
+    
+    $activeUsers = User::where('is_active', 1)->count(); 
+
+    return view('users.index', compact('user', 'dropdown', 'types', 'plants', 'activeUsers')); 
+}
 
 
     public function store(Request $request)

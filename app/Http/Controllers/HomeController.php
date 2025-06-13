@@ -1,141 +1,174 @@
 <?php
 
 namespace App\Http\Controllers;
-use DB;
-use Carbon\Carbon;
+
+use App\Models\Shop;
+use App\Models\User;
+use App\Models\RiskAssessment;
+use App\Models\SaFinding;
 use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use App\Models\SapInventory;
-use App\Models\InventoryUpdate;
-use App\Models\AggregatedInventorySummary;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon; 
 
 class HomeController extends Controller
 {
-
     public function index(Request $request)
     {
+        $activeUsers = User::where('last_login_at', '>=', Carbon::now()->subDay())->count();
+        $status = $request->input('status');
+        $month = $request->input('month', now()->format('m'));
+        $year = $request->input('year', now()->format('Y'));
 
-        return view('home.index');
-    }
+        $totalShops = Shop::count();
 
-    // AJAX endpoint for groupno
-    public function getGroupnoBySloc(Request $request)
-    {
-        $groupnos = DB::table('sap_inventories')
-            ->where('sloc', $request->sloc)
-            ->select('groupno')->distinct()->pluck('groupno');
+        $query = RiskAssessment::query();
 
-        return response()->json($groupnos);
-    }
+        // Apply date filters
+        $query->whereMonth('created_at', $month)
+              ->whereYear('created_at', $year);
 
-    // AJAX endpoint for material & description
-    public function getMaterialsByGroupno(Request $request)
-    {
-        $materials = DB::table('sap_inventories')
-            ->where('sloc', $request->sloc)
-            ->where('groupno', $request->groupno)
-            ->select('material', 'materialdescription')
-            ->distinct()
-            ->get();
-
-        return response()->json($materials);
-    }
-
-
-        public function detail($id)
-    {
-
-
-        $dataDetail = AggregatedInventorySummary::where('sap_inventory_id', $id)->first();
-        if (request()->ajax()) {
-            // Subquery to get the latest created_at for each serial_number
-            $latestDates = InventoryUpdate::select('serial_number as latest_serial_number', \DB::raw('MAX(created_at) as latest_date'))
-                                        ->groupBy('serial_number');
-
-            // Main query to join with subquery to get only the latest records for each serial_number
-            $query = InventoryUpdate::with('inventory')
-                                ->joinSub($latestDates, 'latest_dates', function ($join) {
-                                    $join->on('inventory_updates.serial_number', '=', 'latest_dates.latest_serial_number')
-                                            ->on('inventory_updates.created_at', '=', 'latest_dates.latest_date');
-                                })
-                                ->where('sap_inventory_id', $id);
-
-            return DataTables::of($query)
-                ->addColumn('serial_number', function ($row) {
-                    return $row->serial_number;
-                })
-                ->addColumn('actqty', function ($row) {
-                    return $row->actqty;
-                })
-                ->addColumn('remarks', function ($row) {
-                    return $row->remarks;
-                })
-                ->make(true);
+        // Apply status filter
+        if ($status === 'closed') {
+            $query->where('is_followed_up', true);
+        } elseif ($status === 'open') {
+            $query->where('is_followed_up', false);
         }
 
-        return view('home.detail',compact('dataDetail'), ['id' => $id]);
-    }
-    public function printView()
-    {
-        if (!session()->has('printData')) {
-            return redirect()->route('home')->with('failed', 'Nothing to print.');
+        // Total yang sesuai filter
+        $totalAssessments = $query->count();
+
+        // Risk Level Summary
+        $rawCounts = clone $query;
+        $rawCounts = $rawCounts->select('risk_level', DB::raw('count(*) as total'))
+            ->groupBy('risk_level')
+            ->pluck('total', 'risk_level');
+
+        $riskLevelCountsArray = [
+            'Low' => 0,
+            'Medium' => 0,
+            'High' => 0,
+            'Extreme' => 0,
+        ];
+
+        foreach ($rawCounts as $level => $total) {
+            $riskLevelCountsArray[$level] = $total;
         }
 
-        $printData = session('printData');
-        return view('inventory.print', compact('printData'));
-    }
-
-   public function manualInput(Request $request)
-{
-    $sloc = $request->sloc;
-    $groupno = $request->groupno;
-    $material = $request->material;
-
-    // Ambil data utama dari sap_inventories
-    $inventory = DB::table('sap_inventories')
-        ->where('sloc', $sloc)
-        ->where('groupno', $groupno)
-        ->where('material', $material)
-        ->first();
-
-    // Ambil log update berdasarkan sap_inventory_id (jika inventory ditemukan)
-    $updates = [];
-    if ($inventory) {
-        $updates = DB::table('inventory_updates')
-            ->where('sap_inventory_id', $inventory->id)
-            ->orderBy('created_at', 'desc')
+        // Recent Assessments
+        $recentAssessments = clone $query;
+        $recentAssessments = $recentAssessments->with('shop')
+            ->latest()
+            ->take(10)
             ->get();
+
+        // All Assessments
+        $allAssessments = clone $query;
+        $allAssessments = $allAssessments->with('shop', 'detail')
+            ->latest()
+            ->get();
+
+        // Example data if needed for single form assessment
+        $formAssessment = RiskAssessment::with('shop', 'detail')->find(31);
+
+        return view('home.index', [
+            'totalShops' => $totalShops,
+            'totalAssessments' => $totalAssessments,
+            'riskLevelCounts' => array_values($riskLevelCountsArray),
+            'recentAssessments' => $recentAssessments,
+            'allAssessments' => $allAssessments,
+            'formAssessment' => $formAssessment,
+            'month' => $month,
+            'year' => $year,
+            'user' => Auth::user(),
+            'status' => $status,
+            'activeUsers' => $activeUsers,
+        ]);
     }
 
-    // Return view atau redirect dengan data (bebas kamu)
-    return view('home.manual_input', compact('inventory', 'updates'));
-}
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'shop_id' => 'required|exists:shops,id',
+            'scope_number' => 'required|array',
+            'finding_problem' => 'required|array',
+            'potential_hazards' => 'required|array',
+            'accessor' => 'required|array',
+            'severity' => 'required|array',
+            'possibility' => 'required|array',
+            'score' => 'required|array',
+            'risk_reduction_proposal' => 'required|array',
+            'file.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xlsx,xls|max:10240',
+        ]);
 
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'sap_inventory_id' => 'required|integer|exists:sap_inventories,id',
-        'actqty' => 'required|numeric|min:0',
-        'serial_number' => 'required|string|max:45',
-        'remarks' => 'nullable|string|max:255',
-        'pic' => 'required|string|max:45',
-        'checker' => 'required|string|max:45',
-    ]);
+        foreach ($request->finding_problem as $i => $problem) {
+            $filePath = null;
+            if ($request->hasFile("file.$i")) {
+                $uploadedFile = $request->file("file")[$i];
+                $filename = time() . '_' . $uploadedFile->getClientOriginalName();
+                $filePath = $uploadedFile->storeAs('risk_files', $filename, 'public');
+            }
 
-    DB::table('inventory_updates')->insert([
-        'sap_inventory_id' => $validated['sap_inventory_id'],
-        'actqty' => $validated['actqty'],
-        'serial_number' => $validated['serial_number'],
-        'remarks' => $validated['remarks'],
-        'pic' => $validated['pic'],
-        'checker' => $validated['checker'],
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+            $score = $request->score[$i];
+            $risk_level = $this->determineRiskLevel($score);
 
-    return redirect()->route('home')->with('status', 'Inventory update saved!');
-}
+            $header = RiskAssessment::create([
+                'shop_id' => $request->shop_id,
+                'scope_number' => $request->scope_number[$i],
+                'finding_problem' => $problem,
+                'potential_hazards' => $request->potential_hazards[$i],
+                'accessor' => $request->accessor[$i],
+                'severity' => $request->severity[$i],
+                'possibility' => $request->possibility[$i],
+                'score' => $score,
+                'risk_level' => $risk_level,
+                'risk_reduction_proposal' => $request->risk_reduction_proposal[$i],
+                'file' => $filePath,
+                'created_by' => auth()->id(),
+                'is_followed_up' => false,
+            ]);
 
+            $header->detail()->create([
+                'scope' => $request->scope_number[$i],
+                'finding_problem' => $problem,
+                'potential_hazard' => $request->potential_hazards[$i],
+                'accessor' => $request->accessor[$i],
+                'severity' => $request->severity[$i],
+                'possibility' => $request->possibility[$i],
+                'score' => $score,
+                'risk_level' => $risk_level,
+                'reduction_measures' => $request->risk_reduction_proposal[$i],
+            ]);
+        }
 
+        return redirect('/home')->with('success', 'Risk assessment data has been saved.');
+    }
 
+    public function destroy($id)
+    {
+        $assessment = RiskAssessment::find($id);
+        if ($assessment) {
+            $assessment->delete();
+        }
+
+        $finding = SaFinding::where('id_assessment', $id)->first();
+        if ($finding) {
+            $finding->delete();
+        }
+
+        return redirect()->back()->with('success', 'Risk assessment and related data deleted successfully.');
+    }
+
+    private function determineRiskLevel($score)
+    {
+        if ($score <= 4) {
+            return 'Low';
+        } elseif ($score <= 9) {
+            return 'Medium';
+        } elseif ($score <= 16) {
+            return 'High';
+        } else {
+            return 'Extreme';
+        }
+    }
 }

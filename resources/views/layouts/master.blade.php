@@ -6,9 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>MKM Your Apps System</title>
+        <title>MKM Safety Assessment</title>
         <link href="{{asset('assets/css/styles.css')}}" rel="stylesheet" />
-        <link rel="icon" href="{{ asset('assets/img/mms.png') }}">
+        <link rel="icon" href="{{ asset('assets/img/Safety Assessment2.png') }}">
 
         <!-- PWA  -->
         <meta name="theme-color" content="rgba(0, 103, 127, 1)"/>
@@ -128,7 +128,7 @@
                                 <div class="row">
                                     <div class="col-md-6 small"></div>
                                     <div class="col-md-6 text-md-end small">
-                                     Copyright PT Mitsubishi Krama Yudha Motors and Manufacturing&copy; 2023
+                                     Copyright PT Mitsubishi Krama Yudha Motors and Manufacturing&copy; 2025
                                     </div>
                                 </div>
                             </div>
@@ -242,6 +242,8 @@
         });
     });
 </script>
+@stack('scripts')
+</body>
 
 
     </body>
