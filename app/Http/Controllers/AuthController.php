@@ -44,7 +44,7 @@ class AuthController extends Controller
     $emailOrName = $request->input('email');
     $password = $request->input('password');
 
-    // Determine if input is an email address or a username
+    // Determine if input idds an email address or a username
     $isEmail = filter_var($emailOrName, FILTER_VALIDATE_EMAIL);
 
     // Define credentials based on input type
