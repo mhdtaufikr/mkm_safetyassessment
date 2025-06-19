@@ -23,6 +23,7 @@
         }
     </style>
 </head>
+
 <body>
 <div class="container mt-4">
     <h4 class="text-center fw-bold">Risk Assessment for Preventing Workplace Accidents</h4>
@@ -30,43 +31,58 @@
         <img src="{{ asset('assets/img/Screenshot (755).png') }}" alt="Risk Assessment Layout" class="img-fluid" style="max-width: 100%; height: auto;">
     </div>
 
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('risk-assessment.store') }}" enctype="multipart/form-data">
         @csrf
 
-        
         <!-- Shop Selection -->
-        <div class=" row mb-3">
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-        <label class="fw-bold me-2">Shop:</label>
-        <select name="shop_id" id="shop_id" class="form-select" required>
-            <option value="">-- Select Shop --</option>
-            @foreach ($shops as $shop)
-                <option value="{{ $shop->id }}">{{ $shop->name }}</option>
-            @endforeach
-        </select>
-    </div>
-</div>
+        <div class="row mb-3">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <label class="fw-bold me-2">Shop:</label>
+                <select name="shop_id" id="shop_id" class="form-select" required>
+                    <option value="">-- Select Shop --</option>
+                    @foreach ($shops as $shop)
+                        <option value="{{ $shop->id }}">{{ $shop->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
 
-        
         <div id="risk-assessment-container"></div>
+
         <div class="d-flex justify-content-end mb-2">
-      <button type="submit" class="btn btn-success"> Submit </button>
-    </div>
+            <button type="submit" class="btn btn-success">Submit</button>
+        </div>
 
-    
-    
-    <div class="d-flex justify-content-start mb-3">
-      <button type="button" class="btn btn-outline-primary" id="add-entry-btn">
-        + Add Entry
-      </button>
-    </div>
-
-
-
+        <div class="d-flex justify-content-start mb-3">
+            <button type="button" class="btn btn-outline-primary" id="add-entry-btn">
+                + Add Entry
+            </button>
+        </div>
     </form>
 </div>
 
-<!-- JavaScript -->
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Script Hilangkan Alert -->
+<script>
+    setTimeout(function () {
+        let alert = document.querySelector('.alert');
+        if (alert) {
+            let fade = bootstrap.Alert.getOrCreateInstance(alert);
+            fade.close();
+        }
+    }, 3000);
+</script>
+
+<!-- Script Entry Dinamis -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const container = document.getElementById('risk-assessment-container');
@@ -76,7 +92,7 @@
         function createEntry(i) {
             const div = document.createElement('div');
             div.className = 'card-entry p-3 mb-4';
-div.innerHTML = `
+            div.innerHTML = `
 <div class="card border-primary mb-4">
   <div class="card-header bg-primary text-white fw-bold">
     Form
@@ -107,13 +123,11 @@ div.innerHTML = `
                 pattern="[A-Za-z\\s]+" title="Only letters allowed"
                 oninput="this.value = this.value.replace(/[0-9]/g, '')" required>
         </div>
-
         <div class="col-md-8">
-                                <label>Accessor</label>
-                                <input name="accessor[]" type="text" class="form-control"
-                                    pattern="[A-Za-z\\s]+" required>
-                            </div>
-
+            <label>Accessor</label>
+            <input name="accessor[]" type="text" class="form-control"
+                pattern="[A-Za-z\\s]+" required>
+        </div>
         <div class="col-md-4">
             <label>Severity</label>
             <select name="severity[]" class="severity form-select" required>
@@ -157,8 +171,7 @@ div.innerHTML = `
     </div>
   </div>
 </div>
-    
-`;
+            `;
 
             container.appendChild(div);
 
@@ -184,11 +197,15 @@ div.innerHTML = `
             prob.addEventListener('input', updateRisk);
         }
 
+        // Initial Entry
         createEntry(index++);
+
+        // Add More Entries
         addEntryBtn.addEventListener('click', function () {
             createEntry(index++);
         });
     });
 </script>
+
 </body>
 </html>

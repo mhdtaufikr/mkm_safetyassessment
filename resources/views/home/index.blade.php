@@ -33,7 +33,7 @@
                 <div class="card bg-success text-white h-100">
                     <div class="card-body">Total Assessments: {{ $totalAssessments }}</div>
                     <div class="card-footer d-flex align-items-center justify-content-between">
-                        <a class="small text-white stretched-link" href="/form">Create New</a>
+                        <a class="small text-white stretched-link" href="http://localhost:8080/mkm_safetyassessment/public/form">Create New</a>
                         <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                     </div>
                 </div>
@@ -94,14 +94,30 @@
 
         <!-- Chart & Table Section -->
         <div class="row">
-            <div class="col-xl-6">
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white h-100">Risk Level Summary</div>
-                    <div class="card-body" id="risk-chart-container">
-                        <canvas id="riskChart" width="100%" height="40"></canvas>
+             <div class="col-xl-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white h-100">Risk Level Summary</div>
+            <div class="card-body d-flex" id="risk-chart-container">
+
+                <!-- Box Summary Tahun & Follow Up -->
+                <div class="me-3 d-flex flex-column justify-content-start align-items-center" style="width: 100px;">
+                    <div class="border rounded p-2 shadow-sm bg-light w-90 text-center">
+                        <div class="fw-bold text-primary">Year</div>
+                        <div class="fs-5">{{ $year }}</div>
+                        <hr class="my-1">
+                        <div class="text-success small">Closed: {{ $allAssessments->where('is_followed_up', true)->count() }}</div>
+                        <div class="text-warning small">Open: {{ $allAssessments->where('is_followed_up', false)->count() }}</div>
                     </div>
                 </div>
+
+                <!-- Chart tetap -->
+                <div class="flex-grow-1">
+                    <canvas id="riskChart" width="90%" height="30"></canvas>
+                </div>
+
             </div>
+        </div>
+    </div>
             <div class="col-xl-6">
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white h-100">Recent Risk Assessments</div>
@@ -131,14 +147,15 @@
             </div>
         </div>
 
+        
+
         <div class="mb-3 d-flex gap-2">
     <form action="{{ route('export.excel') }}" method="GET" target="_blank" style="display: inline;">
     <button type="submit" class="btn btn-success btn-sm">
         <i class="bi bi-file-earmark-excel"></i> Export Excel
     </button>
 </form>
-
-    
+ 
 </div>
 
 
@@ -279,5 +296,19 @@
         matchHeight();
         $(window).resize(matchHeight);
     });
+</script>
+
+<!-- Bootstrap Bundle for Alert & Modal support -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Script Hilangkan Alert -->
+<script>
+    setTimeout(function () {
+        let alert = document.querySelector('.alert');
+        if (alert) {
+            let fade = bootstrap.Alert.getOrCreateInstance(alert);
+            fade.close();
+        }
+    }, 3000);
 </script>
 @endsection

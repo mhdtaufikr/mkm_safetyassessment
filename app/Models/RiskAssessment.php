@@ -9,8 +9,10 @@ class RiskAssessment extends Model
 {
     use HasFactory;
 
+    // Nama tabel di database
     protected $table = 'risk_assessment_headers';
 
+    // Kolom yang bisa diisi secara massal
     protected $fillable = [
         'shop_id',
         'scope_number',
@@ -27,7 +29,9 @@ class RiskAssessment extends Model
     ];
 
     /**
-     * Relasi ke model Shop.
+     * Relasi ke model Shop
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function shop()
     {
@@ -35,16 +39,32 @@ class RiskAssessment extends Model
     }
 
     /**
-     * Relasi ke model User (jika ingin menampilkan siapa yang create).
+     * Relasi ke model User sebagai creator
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * Relasi ke RiskAssessmentDetail (jika digunakan)
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function detail()
     {
-    return $this->hasMany(RiskAssessmentDetail::class, 'risk_assessment_header_id');
+        return $this->hasMany(RiskAssessmentDetail::class, 'risk_assessment_header_id');
     }
 
+    /**
+     * Relasi ke SaFinding (1 assessment -> 1 finding)
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function finding()
+    {
+        return $this->hasOne(SaFinding::class, 'id_assessment', 'id');
+    }
 }

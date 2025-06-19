@@ -26,6 +26,14 @@
                     </div>
                 </div>
 
+                {{-- Export Excel Button --}}
+        <form action="{{ route('audit5s.export', ['id' => $audit->id]) }}" method="GET" target="_blank" style="display: inline;">
+    <button type="submit" class="btn btn-success btn-sm">
+        <i class="bi bi-file-earmark-excel"></i> Export Excel
+    </button>
+</form>
+
+
                 {{-- Tabel Checklist --}}
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle">

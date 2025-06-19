@@ -10,6 +10,45 @@
 <body>
 
 <main>
+
+  <div class="container my-4">
+    <div class="row">
+        <div class="col-md-8 d-flex">
+            <div class="card w-100 h-100">
+                <div class="card-body">
+                    <h5><strong>KEY BELIEFS:</strong></h5>
+                    <ol class="mb-0">
+                        <li>Everything HAS a place and everything IN its place.</li>
+                        <li>Nothing on the Floor, except Legs, Wheels, Deck Footstep or Pallets.</li>
+                        <li>Clean to Inspect, Inspect to Detect, Detect to Correct, and Correct to Perfect.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 d-flex">
+            <div class="card w-100 h-100">
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Item</th>
+                                <th>Criteria</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>0</td><td>Strongly disagree</td></tr>
+                            <tr><td>1</td><td>Disagree</td></tr>
+                            <tr><td>2</td><td>Neutral</td></tr>
+                            <tr><td>3</td><td>Agree</td></tr>
+                            <tr><td>4</td><td>Strongly agree</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
   <div class="container-xl px-4 mt-4">
     <form id="auditForm" action="{{ isset($audit) ? route('saudit.update', $audit->id) : route('saudit.store') }}" method="POST" enctype="multipart/form-data">
       @csrf
@@ -34,7 +73,14 @@
             </div>
             <div class="col-md-4 col-12">
               <label class="form-label">Date</label>
-              <input type="date" name="date" class="form-control" value="{{ old('date', $audit->date ?? '') }}" required>
+              @php
+    $today = date('Y-m-d');
+    $dateValue = old('date', $audit->date ?? $today);
+@endphp
+
+<input type="date" class="form-control" value="{{ $dateValue }}" disabled>
+<input type="hidden" name="date" value="{{ $dateValue }}">
+
             </div>
             <div class="col-md-4 col-12">
               <label class="form-label">Auditor</label>
@@ -71,12 +117,13 @@
 
                   <div class="mb-3">
                     <label class="form-label"><strong>Score:</strong></label>
-                    <div class="d-flex flex-wrap gap-2">
+                    <div class="d-flex flex-row flex-wrap gap-3">
                       @for ($i = 0; $i <= 4; $i++)
-                      <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="items[{{ $itemCounter }}][score]" value="{{ $i }}" data-id="{{ $itemCounter }}" data-category="{{ $key }}"
-                        {{ isset($audit->scores[$itemCounter]['score']) && $audit->scores[$itemCounter]['score'] == $i ? 'checked' : '' }}>
-                        <label class="form-check-label small">{{ $i }}</label>
+                      <div class="form-check d-flex align-items-center">
+                        <input class="form-check-input me-1" type="radio" name="items[{{ $itemCounter }}][score]" value="{{ $i }}"
+                          data-id="{{ $itemCounter }}" data-category="{{ $key }}"
+                          {{ isset($audit->scores[$itemCounter]['score']) && $audit->scores[$itemCounter]['score'] == $i ? 'checked' : '' }}>
+                        <label class="form-check-label">{{ $i }}</label>
                       </div>
                       @endfor
                     </div>
@@ -156,13 +203,28 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.getElementById('auditForm').addEventListener('submit', function(e) {
-    const totalItems = document.querySelectorAll('div[data-category]').length;
-    const filled = document.querySelectorAll('input[type="radio"]:checked').length;
-    if (filled < totalItems) {
-      e.preventDefault();
-      alert('Please fill score for all items before submitting.');
+  const totalItems = document.querySelectorAll('div[data-category]').length;
+  const filled = document.querySelectorAll('input[type="radio"]:checked').length;
+
+  if (filled < totalItems) {
+    e.preventDefault();
+
+    // Cari elemen pertama yang belum diisi
+    const allItems = document.querySelectorAll('div[data-category]');
+    for (let item of allItems) {
+      const radios = item.querySelectorAll('input[type="radio"]');
+      const isChecked = Array.from(radios).some(r => r.checked);
+
+      if (!isChecked) {
+        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        item.classList.add('border-danger'); // kasih efek visual
+        alert('Please fill in the missing score.');
+        break;
+      }
     }
-  });
+  }
+});
+
 
   calculateTotals();
 });

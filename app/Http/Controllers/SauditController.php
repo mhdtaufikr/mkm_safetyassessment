@@ -13,26 +13,51 @@ class SauditController extends Controller
 {
     $audits = Saudit::orderBy('created_at', 'desc')->get();
 
-    $shops = $audits->groupBy('shop');
+    $actualScores = [0, 0, 0, 0, 0]; // Sort, Set in Order, Shine, Standardize, Sustain
+    $targetScores = [16, 16, 16, 16, 16]; // 4 pertanyaan x 4 poin per kategori
 
-    $chartLabels = [];
-    $chartData = [];
+    if ($audits->count() > 0) {
+        $categoryMap = [
+            1 => 'Sort', 2 => 'Set in Order', 3 => 'Shine', 4 => 'Standardize', 5 => 'Sustain',
+            6 => 'Sort', 7 => 'Set in Order', 8 => 'Shine', 9 => 'Standardize', 10 => 'Sustain',
+            11 => 'Sort', 12 => 'Set in Order', 13 => 'Shine', 14 => 'Standardize', 15 => 'Sustain',
+            16 => 'Sort', 17 => 'Set in Order', 18 => 'Shine', 19 => 'Standardize', 20 => 'Sustain',
+        ];
 
-    foreach ($shops as $shop => $shopAudits) {
-        $chartLabels[] = $shop;
+        $scoresByCategory = [];
 
-        $totalFinalScore = $shopAudits->sum('final_score');
-        $averageFinalScore = $shopAudits->count() > 0 ? $totalFinalScore / $shopAudits->count() : 0;
+        foreach ($audits as $audit) {
+            $scoreData = $audit->scores;
 
-        $chartData[] = round($averageFinalScore, 2);
+            foreach ($scoreData as $questionId => $data) {
+                $category = $categoryMap[$questionId] ?? null;
+                if ($category) {
+                    $scoresByCategory[$category][] = $data['score'];
+                }
+            }
+        }
+
+        $categories = ['Sort', 'Set in Order', 'Shine', 'Standardize', 'Sustain'];
+        $averageScores = [];
+
+        foreach ($categories as $i => $cat) {
+            if (!empty($scoresByCategory[$cat])) {
+                $totalScore = array_sum($scoresByCategory[$cat]);
+                $totalCount = count($scoresByCategory[$cat]);
+                $average = $totalCount > 0 ? round($totalScore / $totalCount, 2) : 0;
+                $averageScores[$cat] = $average;
+            } else {
+                $averageScores[$cat] = 0;
+            }
+
+            $actualScores[$i] = $averageScores[$cat]; // Update actual score per kategori
+        }
     }
 
-    return view('saudit.index', compact('audits', 'chartLabels', 'chartData'));
+    return view('saudit.index', compact('audits', 'actualScores', 'targetScores'));
 }
 
 
-
-    // Fungsi mapping index ke kategori
     private function mapIndexToCategory($index)
     {
         if ($index >= 1 && $index <= 4) return 'Sort';
@@ -55,17 +80,21 @@ class SauditController extends Controller
             'shop' => 'required|string|max:255',
             'date' => 'required|date',
             'auditor' => 'required|string|max:255',
-            'items' => 'required|array',
             'comments' => 'nullable|string',
+            'items' => 'required|array',
+            'items.*.check_item' => 'required|string',
+            'items.*.description' => 'required|string',
+            'items.*.score' => 'required|numeric|between:0,4',
+            'items.*.comment' => 'nullable|string',
             'items.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xlsx,xls|max:5120',
         ]);
 
         $scores = [];
         $totalScore = 0;
+        $categoryScores = [];
 
         foreach ($validated['items'] as $index => $item) {
             $filePath = null;
-
             if ($request->hasFile("items.$index.file")) {
                 $uploadedFile = $request->file("items.$index.file");
                 $filePath = $uploadedFile->store('saudit_files', 'public');
@@ -79,7 +108,17 @@ class SauditController extends Controller
                 'file' => $filePath,
             ];
 
+            $category = $this->mapIndexToCategory($index + 1);
+            if ($category) {
+                $categoryScores[$category][] = (int) $item['score'];
+            }
+
             $totalScore += (int) $item['score'];
+        }
+
+        $averageByCategory = [];
+        foreach ($categoryScores as $category => $scoresArray) {
+            $averageByCategory[$category] = round(array_sum($scoresArray) / count($scoresArray), 2);
         }
 
         $maxTotal = count($validated['items']) * 4;
@@ -92,9 +131,10 @@ class SauditController extends Controller
             'scores' => $scores,
             'final_score' => $finalScore,
             'comments' => $validated['comments'],
+            'score_by_category' => $averageByCategory,
         ]);
 
-        return redirect()->route('saudit.index')->with('success', '5S audit successfully submitted.');
+        return redirect()->to('/qr/' . urlencode($validated['shop']))->with('success', '5S Audit Successfully Submitted.');
     }
 
     public function edit($id)
@@ -119,6 +159,7 @@ class SauditController extends Controller
         $existingScores = $audit->scores ?? [];
         $scores = [];
         $totalScore = 0;
+        $categoryScores = [];
 
         foreach ($validated['items'] as $index => $item) {
             $existingFile = $existingScores[$index]['file'] ?? null;
@@ -140,7 +181,17 @@ class SauditController extends Controller
                 'file' => $filePath,
             ];
 
+            $category = $this->mapIndexToCategory($index + 1);
+            if ($category) {
+                $categoryScores[$category][] = (int) $item['score'];
+            }
+
             $totalScore += (int) $item['score'];
+        }
+
+        $averageByCategory = [];
+        foreach ($categoryScores as $category => $scoresArray) {
+            $averageByCategory[$category] = round(array_sum($scoresArray) / count($scoresArray), 2);
         }
 
         $maxTotal = count($validated['items']) * 4;
@@ -153,9 +204,10 @@ class SauditController extends Controller
             'scores' => $scores,
             'final_score' => $finalScore,
             'comments' => $validated['comments'],
+            'score_by_category' => $averageByCategory,
         ]);
 
-        return redirect()->route('saudit.index')->with('success', '5S audit successfully updated.');
+        return redirect()->route('saudit.index')->with('success', '5S audit berhasil diperbarui.');
     }
 
     public function show($id)
@@ -173,7 +225,7 @@ class SauditController extends Controller
             }
         }
         $audit->delete();
-        return redirect()->route('saudit.index')->with('success', '5S audit deleted.');
+        return redirect()->route('saudit.index')->with('success', '5S audit berhasil dihapus.');
     }
 
     public function createShop($name)

@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <style>
-  .score-label {
-    display: inline-block;
-    width: 20px;
-    text-align: center;
-  }
-</style>
+    .score-label {
+      display: inline-block;
+      width: 20px;
+      text-align: center;
+    }
+  </style>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
@@ -17,6 +17,46 @@
 <body>
 
 <main>
+
+  <div class="container my-4">
+    <div class="row">
+        <div class="col-md-8 d-flex">
+            <div class="card w-100 h-100">
+                <div class="card-body">
+                    <h5><strong>KEY BELIEFS:</strong></h5>
+                    <ol class="mb-0">
+                        <li>Everything HAS a place and everything IN its place.</li>
+                        <li>Nothing on the Floor, except Legs, Wheels, Deck Footstep or Pallets.</li>
+                        <li>Clean to Inspect, Inspect to Detect, Detect to Correct, and Correct to Perfect.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 d-flex">
+            <div class="card w-100 h-100">
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Item</th>
+                                <th>Criteria</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>0</td><td>Strongly disagree</td></tr>
+                            <tr><td>1</td><td>Disagree</td></tr>
+                            <tr><td>2</td><td>Neutral</td></tr>
+                            <tr><td>3</td><td>Agree</td></tr>
+                            <tr><td>4</td><td>Strongly agree</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+  {{-- Form Mulai --}}
   <div class="container-xl px-4 mt-4">
     <form id="auditForm" action="{{ isset($audit) ? route('saudit.update', $audit->id) : route('saudit.store') }}" method="POST" enctype="multipart/form-data">
       @csrf
@@ -28,32 +68,40 @@
         </div>
         <div class="card-body">
 
-          {{-- Header Fields --}}
+          {{-- Header --}}
           <div class="row g-3 mb-4">
             <div class="col-md-4 col-12">
               <label class="form-label">Shop</label>
-              <input class="form-control" type="text" name="shop" id="" value="{{$name}}" readonly disabled>
+              <input class="form-control" type="text" value="{{ $name }}" readonly disabled>
+              <input type="hidden" name="shop" value="{{ $name }}">
             </div>
+
             <div class="col-md-4 col-12">
               <label class="form-label">Date</label>
-              <input type="date" name="date" class="form-control" value="{{ old('date', $audit->date ?? '') }}" required>
+              @php
+                $today = date('Y-m-d');
+                $dateValue = old('date', $audit->date ?? $today);
+              @endphp
+              <input type="date" class="form-control" value="{{ $dateValue }}" disabled>
+              <input type="hidden" name="date" value="{{ $dateValue }}">
             </div>
+
             <div class="col-md-4 col-12">
               <label class="form-label">Auditor</label>
               <input type="text" name="auditor" class="form-control" value="{{ old('auditor', $audit->auditor ?? '') }}" required>
             </div>
           </div>
 
-          {{-- Audit Sections --}}
+          {{-- Item --}}
           @php
-          $categories = [
+            $categories = [
               '1S' => [['Materials or parts', 'There are no unneeded materials or parts around'], ['Machines or other equipment', 'There are no unused machines or other equipment around'], ['Tools, Supplies, Parts', 'There are no items on the Floor (except Legs, Wheels, Deck Footstep or Pallets)'], ['Frequency', 'All items been sorted by everyday use vs. those used occasionally']],
               '2S' => [['Item indicators', 'Everything HAS a place and everything is IN its place'], ['Marking of walkways, tools, daisha and pallets', 'Lines or markers are used to clearly indicate walkways, tools, daisha and pallets'], ['Tools', 'Tools are arranged functionally to facilitate picking them and returning them'], ['Storage indicator', 'Shelves or storage have marked (Kanban)']],
               '3S' => [['Floors', 'Floors are kept shiny and clean and free of waste, water, dust and/or oil'], ['Machine, Tools & Equipment', 'The machines and equipment are wiped clean often; and kept free of waste, dust, and/or oil'], ['Habitual cleanliness', 'There is a cleaning checklist being followed'], ['Cleaning Tools', 'There are cleaning tools present in the area and in good condition']],
               '4S' => [['Maintenance Schedule', 'The maintenance schedules are clearly displayed, followed, and verified for all machines and equipment'], ['Measurement Tools', 'The measurements tools are calibrated periodically'], ['Work Instruction', 'The standards procedures are written, clear and actively used'], ['KPI', 'The KPIs related to the standard work are visualized, maintained and monitored']],
               '5S' => [['Tools and parts', 'Tools and parts are being stored correctly'], ['Stock controls', 'Stock controls are being adhered to (Kanban)'], ['Procedures', 'Procedures are updated (within last year) and regularly reviewed'], ['Check sheet', 'The standardize check sheet are available and updated in each workstation']],
-          ];
-          $itemCounter = 1;
+            ];
+            $itemCounter = 1;
           @endphp
 
           @foreach($categories as $key => $items)
@@ -70,29 +118,27 @@
                     <div class="col-md-6 col-12"><strong>Check Item:</strong> {{ $item[0] }}</div>
                     <div class="col-md-6 col-12"><strong>Description:</strong> {{ $item[1] }}</div>
                   </div>
-                 <div class="mb-3">
-  <label class="form-label"><strong>Score:</strong></label>
-  <div class="d-flex flex-row flex-wrap gap-3">
-    @for ($i = 0; $i <= 4; $i++)
-      <div class="form-check d-flex align-items-center">
-        <input class="form-check-input me-1" type="radio" name="items[{{ $itemCounter }}][score]" value="{{ $i }}"
-          data-id="{{ $itemCounter }}" data-category="{{ $key }}"
-          {{ isset($audit->scores[$itemCounter]['score']) && $audit->scores[$itemCounter]['score'] == $i ? 'checked' : '' }}>
-        <label class="form-check-label">{{ $i }}</label>
-      </div>
-    @endfor
-  </div>
-</div>
+                  <div class="mb-3">
+                    <label class="form-label"><strong>Score:</strong></label>
+                    <div class="d-flex flex-row flex-wrap gap-3">
+                      @for ($i = 0; $i <= 4; $i++)
+                      <div class="form-check d-flex align-items-center">
+                        <input class="form-check-input me-1" type="radio" name="items[{{ $itemCounter }}][score]" value="{{ $i }}"
+                          data-id="{{ $itemCounter }}" data-category="{{ $key }}"
+                          {{ isset($audit->scores[$itemCounter]['score']) && $audit->scores[$itemCounter]['score'] == $i ? 'checked' : '' }}>
+                        <label class="form-check-label">{{ $i }}</label>
+                      </div>
+                      @endfor
+                    </div>
+                  </div>
                   <div class="mb-3">
                     <label class="form-label"><strong>Comment:</strong></label>
                     <input type="text" name="items[{{ $itemCounter }}][comment]" class="form-control form-control-sm" value="{{ $audit->scores[$itemCounter]['comment'] ?? '' }}">
                   </div>
-
                   <div class="mb-3">
                     <label class="form-label"><strong>Upload File:</strong></label>
                     <input type="file" name="items[{{ $itemCounter }}][file]" class="form-control form-control-sm">
                   </div>
-
                   <input type="hidden" name="items[{{ $itemCounter }}][check_item]" value="{{ $item[0] }}">
                   <input type="hidden" name="items[{{ $itemCounter }}][description]" value="{{ $item[1] }}">
                 </div>
@@ -119,9 +165,7 @@
 
           <div class="mt-4">
             <button type="submit" class="btn btn-primary">{{ isset($audit) ? 'Update' : 'Submit' }}</button>
-            <a href="{{ route('saudit.index') }}" class="btn btn-secondary">Cancel</a>
           </div>
-
         </div>
       </div>
     </form>
@@ -159,9 +203,20 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('auditForm').addEventListener('submit', function(e) {
     const totalItems = document.querySelectorAll('div[data-category]').length;
     const filled = document.querySelectorAll('input[type="radio"]:checked').length;
+
     if (filled < totalItems) {
       e.preventDefault();
-      alert('Please fill score for all items before submitting.');
+      const allItems = document.querySelectorAll('div[data-category]');
+      for (let item of allItems) {
+        const radios = item.querySelectorAll('input[type="radio"]');
+        const isChecked = Array.from(radios).some(r => r.checked);
+        if (!isChecked) {
+          item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          item.classList.add('border-danger');
+          alert('Please fill in the missing score.');
+          break;
+        }
+      }
     }
   });
 

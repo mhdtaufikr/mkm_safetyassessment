@@ -9,10 +9,10 @@ class SaFinding extends Model
 {
     use HasFactory;
 
-    // Nama tabel di database
+    // Nama tabel
     protected $table = 'sa_findings';
 
-    // Kolom yang boleh diisi secara massal
+    // Kolom yang dapat diisi secara massal
     protected $fillable = [
         'id_assessment',
         'countermeasure',
@@ -29,19 +29,26 @@ class SaFinding extends Model
         'file',
     ];
 
-    // Menonaktifkan created_at dan updated_at
+    // Menonaktifkan timestamps
     public $timestamps = false;
 
-    // (Opsional) Relasi ke RiskAssessment jika diperlukan
+    /**
+     * Relasi ke RiskAssessment
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function assessment()
     {
         return $this->belongsTo(RiskAssessment::class, 'id_assessment');
     }
 
-    // (Opsional) Relasi ke Shop jika diperlukan
-   public function shop()
-{
-    return $this->belongsTo(Shop::class, 'shop_id');
-}
-
+    /**
+     * Relasi ke Shop
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function shop()
+    {
+        return $this->belongsTo(Shop::class, 'shop_id');
+    }
 }

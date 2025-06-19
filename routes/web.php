@@ -13,7 +13,7 @@ use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SaFindingController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\SauditController;
-
+use App\Http\Controllers\Audit5SExportController;
 
 
 /*
@@ -75,6 +75,7 @@ Route::delete('/5s-form/{id}', [SauditController::class, 'destroy'])->name('saud
 Route::get('/5s-form/{id}/view', [SauditController::class, 'show'])->name('saudit.view');
 Route::get('/saudit/dashboard', [SauditController::class, 'dashboard'])->name('saudit.dashboard');
 Route::get('/5s/{id}', [SauditController::class, 'show'])->name('saudit.show');
+Route::get('/export-audit-5s/{id}', [Audit5SExportController::class, 'export'])->name('audit5s.export');
 
 
 
@@ -108,4 +109,5 @@ Route::get('/5s/{id}', [SauditController::class, 'show'])->name('saudit.show');
     Route::get('/export/pdf', [ExportController::class, 'exportPDF'])->name('export.pdf');
     Route::get('/5s-form', [SauditController::class, 'create'])->name('saudit.create');
     Route::post('/5s-form', [SauditController::class, 'store'])->name('saudit.store');
+
 });

@@ -27,6 +27,14 @@
     </div>
   @endif
 
+  @if (session('success'))
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ session('success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+@endif
+
+
   <form method="POST" action="{{ route('risk-assessment.store') }}" enctype="multipart/form-data">
     @csrf
 
@@ -49,6 +57,20 @@
     </div>
   </form>
 </div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Script Hilangkan Alert -->
+<script>
+    setTimeout(function () {
+        let alert = document.querySelector('.alert');
+        if (alert) {
+            let fade = bootstrap.Alert.getOrCreateInstance(alert);
+            fade.close();
+        }
+    }, 3000);
+</script>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
