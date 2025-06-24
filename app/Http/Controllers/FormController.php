@@ -88,7 +88,7 @@ return redirect()->to('/qr/' . urlencode($shopName))
     // Cari berdasarkan nama
     $shop = Shop::where('name', $decodedName)->firstOrFail();
 
-    // Cek nama file gambar berdasarkan nama shop (opsional, disesuaikan)
+    // Cek nama file gambar berdaasassarkan nama shop (opsional, disesuaikan)
     $shopImage = strtolower(str_replace(' ', '_', $shop->name)) . '.png';
 
     return view('form.shop', [
