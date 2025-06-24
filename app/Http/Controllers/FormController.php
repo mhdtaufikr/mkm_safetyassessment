@@ -67,12 +67,17 @@ class FormController extends Controller
 
     // Kirim email notifikasi
     if ($firstAssessment) {
-    Mail::to('dayennurhidayat@gmail.com')
+    Mail::to('muhammad.taufik@ptmkm.co.id')
        // ->cc(['muhammad.taufik@ptmkm.co.id', 'wiwit.sabdo@ptmkm.co.id'])
         ->send(new RiskAssessmentSubmittedMail($firstAssessment));
 }
 
-    return redirect()->back()->with('success', 'Risk assessment successfully saved and notification sent.');
+   // Cari nama shop berdasarkan shop_id
+$shopName = \App\Models\Shop::where('id', $request->shop_id)->value('name');
+
+return redirect()->to('/qr/' . urlencode($shopName))
+                 ->with('success', 'Risk assessment successfully saved and notification sent.');
+
 }
 
     public function indexShop($name)

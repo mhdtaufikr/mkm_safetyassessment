@@ -36,10 +36,12 @@ Route::get('/form', [FormController::class, 'index'])->name('form');
 Route::get('/form/{name}', [FormController::class, 'indexShop'])->name('form.shop');
 Route::get('/qr/{name}', [FormController::class, 'qrScan'])->name('form.scan');
 
+    Route::post('/5s-form', [SauditController::class, 'store'])->name('saudit.store');
 
 Route::get('/form/audit/5s', [SauditController::class, 'create'])->name('form.5s');
 Route::get('/form/audit/5s/{name}', [SauditController::class, 'createShop'])->name('form.5s.shop');
-
+ // Risk Assessment Form Submission
+    Route::post('/risk-assessment', [FormController::class, 'store'])->name('risk-assessment.store');
 
 Route::middleware(['auth'])->group(function () {
 
@@ -50,8 +52,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 
-    // Risk Assessment Form Submission
-    Route::post('/risk-assessment', [FormController::class, 'store'])->name('risk-assessment.store');
+   
 
 
     // Dropdown Shop (using resource)
@@ -68,7 +69,7 @@ Route::middleware(['auth'])->group(function () {
     // 5S Audit Routes
 Route::get('/5s', [SauditController::class, 'index'])->name('saudit.index');         // List all audits
 Route::get('/5s-form', [SauditController::class, 'create'])->name('saudit.create');  // Show create form
-Route::post('/5s-form', [SauditController::class, 'store'])->name('saudit.store');   // Store new audit
+
 Route::get('/5s-form/{id}/edit', [SauditController::class, 'edit'])->name('saudit.edit'); // Edit audit
 Route::put('/5s-form/{id}', [SauditController::class, 'update'])->name('saudit.update');  // Update audit
 Route::delete('/5s-form/{id}', [SauditController::class, 'destroy'])->name('saudit.destroy'); // Delete audit
@@ -108,6 +109,5 @@ Route::get('/export-audit-5s/{id}', [Audit5SExportController::class, 'export'])-
     Route::get('/export/excel', [ExportController::class, 'exportExcel'])->name('export.excel');
     Route::get('/export/pdf', [ExportController::class, 'exportPDF'])->name('export.pdf');
     Route::get('/5s-form', [SauditController::class, 'create'])->name('saudit.create');
-    Route::post('/5s-form', [SauditController::class, 'store'])->name('saudit.store');
 
 });
