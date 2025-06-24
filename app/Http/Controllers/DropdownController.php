@@ -52,7 +52,7 @@ class DropdownController extends Controller
             'code_format' => 'required',
         ]);
 
-         //Validate Input
+         //Valssidate Input
          $validateInput =  Dropdown::where('id',$id)->first();
          $validateInput->category = $request->category;
          $validateInput->name_value = $request->name_value;
