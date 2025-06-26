@@ -78,99 +78,119 @@
   document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('risk-assessment-container');
     const addEntryBtn = document.getElementById('add-entry-btn');
+    const accessorInput = document.getElementById('main-accessor');
+    // Update semua accessor[] jika main accessor berubah
+  accessorInput.addEventListener('input', function () {
+    const value = accessorInput.value;
+    document.querySelectorAll('input[name="accessor[]"]').forEach(input => {
+      input.value = value;
+    });
+  });
     let index = 1;
 
     function createEntry(i) {
-      const div = document.createElement('div');
-      div.className = 'card border-primary mb-4';
-      div.innerHTML = `
-        <div class="card-header bg-primary text-white fw-bold">Form Entry #${i}</div>
-        <div class="card-body">
-          <div class="row gy-2 gx-3">
-            <div class="col-md-4">
-              <label>Scope</label>
-              <select name="scope_number[]" class="form-select" required>
-                <option value="">-- Select Scope --</option>
-                <option value="1">1 - Man</option>
-                <option value="2">2 - Machine</option>
-                <option value="3">3 - Method</option>
-                <option value="4">4 - Material</option>
-                <option value="5">5 - Environment</option>
-              </select>
-            </div>
-            <div class="col-md-8">
-              <label>Finding Problem</label>
-              <input name="finding_problem[]" type="text" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-              <label>Potential Hazard</label>
-              <input name="potential_hazards[]" type="text" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-              <label>Severity</label>
-              <select name="severity[]" class="severity form-select" required>
-                <option value="">-- Select --</option>
-                <option value="1">1 - Insignificant</option>
-                <option value="2">2 - Minor</option>
-                <option value="3">3 - Moderate</option>
-                <option value="4">4 - Major</option>
-                <option value="5">5 - Catastrophic</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label>Possibility</label>
-              <select name="possibility[]" class="possibility form-select" required>
-                <option value="">-- Select --</option>
-                <option value="1">1 - Very Rare</option>
-                <option value="2">2 - Unlikely</option>
-                <option value="3">3 - Occasional</option>
-                <option value="4">4 - Frequent</option>
-                <option value="5">5 - Always</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label>Score</label>
-              <input name="score[]" type="number" class="score form-control" readonly>
-            </div>
-            <div class="col-md-6">
-              <label>Risk Level</label>
-              <input name="risk_level[]" type="text" class="risk-level form-control" readonly>
-            </div>
-            <div class="col-md-6">
-              <label>Risk Reduction Measures Proposal</label>
-              <input name="risk_reduction_proposal[]" type="text" class="form-control" required>
-            </div>
-            <div class="col-12">
-              <label>Attach File (optional)</label>
-              <input name="file[]" type="file" class="form-control">
-            </div>
-            <!-- Inject accessor -->
-            <input type="hidden" name="accessor[]" value="${document.getElementById('main-accessor').value}">
+  const div = document.createElement('div');
+  div.className = '';
+  div.innerHTML = `
+    <div class="card border-primary mb-4">
+      <div class="card-header bg-primary text-white fw-bold">Form Entry ${i}</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Scope</label>
+            <select name="scope_number[]" class="form-select" required>
+              <option value="">-- Select Scope --</option>
+              <option value="1">1 - Man</option>
+              <option value="2">2 - Machine</option>
+              <option value="3">3 - Method</option>
+              <option value="4">4 - Material</option>
+              <option value="5">5 - Environment</option>
+            </select>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label">Finding Problem</label>
+            <input name="finding_problem[]" type="text" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Potential Hazard</label>
+            <input name="potential_hazards[]" type="text" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Severity</label>
+            <select name="severity[]" class="severity form-select" required>
+              <option value="">-- Select --</option>
+              <option value="1">1 - Insignificant</option>
+              <option value="2">2 - Minor</option>
+              <option value="3">3 - Moderate</option>
+              <option value="4">4 - Major</option>
+              <option value="5">5 - Catastrophic</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Possibility</label>
+            <select name="possibility[]" class="possibility form-select" required>
+              <option value="">-- Select --</option>
+              <option value="1">1 - Very Rare</option>
+              <option value="2">2 - Unlikely</option>
+              <option value="3">3 - Occasional</option>
+              <option value="4">4 - Frequent</option>
+              <option value="5">5 - Always</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Score</label>
+            <input name="score[]" type="number" class="score form-control" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Risk Level</label>
+            <input name="risk_level[]" type="text" class="risk-level form-control" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Risk Reduction Measures Proposal</label>
+            <input name="risk_reduction_proposal[]" type="text" class="form-control" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Attach File (optional)</label>
+            <input name="file[]" type="file" class="form-control">
           </div>
         </div>
-      `;
-      container.appendChild(div);
+      </div>
+    </div>
+  `;
 
-      const sev = div.querySelector('.severity');
-      const prob = div.querySelector('.possibility');
-      const score = div.querySelector('.score');
-      const riskLevel = div.querySelector('.risk-level');
+  // Tambahkan input hidden accessor
+  const accessorValue = document.getElementById('main-accessor').value;
+  const accessorInput = document.createElement('input');
+  accessorInput.type = 'hidden';
+  accessorInput.name = 'accessor[]';
+  accessorInput.value = accessorValue;
+  div.querySelector('.card-body').appendChild(accessorInput);
 
-      function updateRisk() {
-        const s = parseInt(sev.value) || 0;
-        const p = parseInt(prob.value) || 0;
-        const result = s * p;
-        score.value = result;
-        riskLevel.value =
-          result > 16 ? "Extreme" :
-          result >= 10 ? "High" :
-          result >= 5  ? "Medium" :
-          result > 0   ? "Low" : "";
-      }
+  container.appendChild(div);
 
-      sev.addEventListener('input', updateRisk);
-      prob.addEventListener('input', updateRisk);
-    }
+  // Score calculation
+  const sev = div.querySelector('.severity');
+  const prob = div.querySelector('.possibility');
+  const score = div.querySelector('.score');
+  const riskLevel = div.querySelector('.risk-level');
+
+  function updateRisk() {
+    const s = parseInt(sev.value) || 0;
+    const p = parseInt(prob.value) || 0;
+    const result = s * p;
+    score.value = result;
+
+    if (result > 16) riskLevel.value = "Extreme";
+    else if (result >= 10) riskLevel.value = "High";
+    else if (result >= 5) riskLevel.value = "Medium";
+    else if (result > 0) riskLevel.value = "Low";
+    else riskLevel.value = "";
+  }
+
+  sev.addEventListener('input', updateRisk);
+  prob.addEventListener('input', updateRisk);
+}
+
 
     addEntryBtn.addEventListener('click', () => createEntry(index++));
     createEntry(index++);
