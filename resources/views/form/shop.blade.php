@@ -8,13 +8,8 @@
   <style>
     table, th, td { border: 1px solid black !important; }
     th, td { text-align: center; vertical-align: middle; }
-    .no-border { border: none !important; }
-    .card-entry { border-left: 5px solid #0d6efd; border-radius: .5rem; background-color: #f8f9fa; }
     .card-header { background-color: #0d6efd; color: white; font-weight: bold; }
     .form-label { font-weight: 500; }
-    @media (max-width: 576px) {
-      .table-responsive { overflow-x: auto; }
-    }
   </style>
 </head>
 <body>
@@ -32,22 +27,35 @@
     {{ session('success') }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
-@endif
-
+  @endif
 
   <form id="risk-form" method="POST" action="{{ route('risk-assessment.store') }}" enctype="multipart/form-data">
     @csrf
 
-    <div class="mb-3">
-      <label class="fw-bold">Shop:</label>
-      <p class="form-control-plaintext">{{ $shopName }}</p>
-      <input type="hidden" name="shop_id" value="{{ $shopId }}">
+    <div class="row g-3 mb-4">
+      <div class="col-md-4 col-12">
+        <label class="form-label fw-bold">Shop</label>
+        <input type="text" class="form-control" value="{{ $shopName }}" readonly disabled>
+        <input type="hidden" name="shop_id" value="{{ $shopId }}">
+      </div>
+
+      <div class="col-md-4 col-12">
+        <label class="form-label fw-bold">Date</label>
+        @php $today = date('Y-m-d'); @endphp
+        <input type="date" class="form-control" value="{{ $today }}" readonly disabled>
+        <input type="hidden" name="date" value="{{ $today }}">
+      </div>
+
+      <div class="col-md-4 col-12">
+        <label class="form-label fw-bold">Accessor</label>
+        <input type="text" id="main-accessor" class="form-control" value="{{ old('accessor') }}" required>
+      </div>
     </div>
 
     <div id="risk-assessment-container"></div>
 
     <div class="d-flex justify-content-end mb-2">
-     <button type="submit" id="submit-btn" class="btn btn-success"> Submit </button>
+      <button type="submit" id="submit-btn" class="btn btn-success"> Submit </button>
     </div>
 
     <div class="d-flex justify-content-start mb-3">
@@ -57,38 +65,12 @@
     </div>
   </form>
 </div>
-<script>
-  document.addEventListener('DOMContentLoaded', function(){
-    const form      = document.getElementById('risk-form');
-    const submitBtn = document.getElementById('submit-btn');
-
-    form.addEventListener('submit', function(){
-      // disable button to prevent double-click
-      submitBtn.disabled = true;
-      // optional: change text to give feedback
-      submitBtn.innerText = 'Submitting…';
-    });
-  });
-</script>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Script Hilangkan Alert -->
-<script>
-    setTimeout(function () {
-        let alert = document.querySelector('.alert');
-        if (alert) {
-            let fade = bootstrap.Alert.getOrCreateInstance(alert);
-            fade.close();
-        }
-    }, 3000);
-</script>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const container = document.getElementById('risk-assessment-container');
     const addEntryBtn = document.getElementById('add-entry-btn');
+    const accessorInput = document.getElementById('main-accessor');
     let index = 1;
 
     function createEntry(i) {
@@ -96,7 +78,7 @@
       div.className = '';
       div.innerHTML = `
         <div class="card border-primary mb-4">
-          <div class="card-header bg-primary text-white fw-bold">Form Entry #${i}</div>
+          <div class="card-header bg-primary text-white fw-bold">Form Entry ${i}</div>
           <div class="card-body">
             <div class="row g-3">
               <div class="col-md-4">
@@ -112,15 +94,11 @@
               </div>
               <div class="col-md-8">
                 <label class="form-label">Finding Problem</label>
-                <input name="finding_problem[]" type="text" class="form-control" pattern="[A-Za-z\\s]+" required>
+                <input name="finding_problem[]" type="text" class="form-control" required>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Potential Hazard</label>
-                <input name="potential_hazards[]" type="text" class="form-control" pattern="[A-Za-z\\s]+" required>
-              </div>
-              <div class="col-md-8">
-                <label class="form-label">Accessor</label>
-                <input name="accessor[]" type="text" class="form-control" pattern="[A-Za-z\\s]+" required>
+                <input name="potential_hazards[]" type="text" class="form-control" required>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Severity</label>
@@ -154,7 +132,7 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">Risk Reduction Measures Proposal</label>
-                <input name="risk_reduction_proposal[]" type="text" class="form-control" pattern="[A-Za-z\\s]+" required>
+                <input name="risk_reduction_proposal[]" type="text" class="form-control" required>
               </div>
               <div class="col-12">
                 <label class="form-label">Attach File (optional)</label>
@@ -164,8 +142,18 @@
           </div>
         </div>
       `;
+
+      // Sisipkan accessor[] hidden ke setiap entry
+      const accessor = accessorInput.value;
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'accessor[]';
+      hidden.value = accessor;
+      div.querySelector('.card-body').appendChild(hidden);
+
       container.appendChild(div);
 
+      // Hitung Score & Risk Level otomatis
       const sev = div.querySelector('.severity');
       const prob = div.querySelector('.possibility');
       const score = div.querySelector('.score');
@@ -191,6 +179,14 @@
     createEntry(index++);
     addEntryBtn.addEventListener('click', function () {
       createEntry(index++);
+    });
+
+    // Prevent multiple submission
+    const form = document.getElementById('risk-form');
+    const submitBtn = document.getElementById('submit-btn');
+    form.addEventListener('submit', function () {
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Submitting…';
     });
   });
 </script>

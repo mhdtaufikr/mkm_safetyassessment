@@ -16,6 +16,9 @@
 </head>
 <body>
 
+  <div class="container mt-4 mb-5">
+  <h4 class="text-center fw-bold mb-4">5S Audit Checklist And Report</h4>
+
 <main>
 
   @if(!empty($shopImage) && file_exists(public_path('storage/shop_images/' . $shopImage)))
@@ -71,7 +74,7 @@
 
       <div class="card shadow-lg mb-4">
         <div class="card-header bg-primary text-white fw-bold">
-          <h4 class="mb-0">{{ isset($audit) ? 'Edit' : 'New' }} 5S Audit</h4>
+          
         </div>
         <div class="card-body">
 

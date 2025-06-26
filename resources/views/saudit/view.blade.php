@@ -82,9 +82,10 @@
                             @forelse ($categories as $category)
                                 @if ($scores->has($category))
                                     {{-- Header Kategori --}}
-                                    <tr style="background-color: #c8cdf4;" class="fw-bold text-uppercase">
+                                    <tr style="background-color: #DDEBF7;" class="fw-bold text-uppercase">
                                         <td colspan="6">5S: {{ $category }}</td>
                                     </tr>
+                                    
 
                                     @php $subTotal = 0; @endphp
 
