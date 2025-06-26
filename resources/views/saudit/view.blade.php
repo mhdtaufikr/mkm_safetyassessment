@@ -27,58 +27,105 @@
                 </div>
 
                 {{-- Export Excel Button --}}
-        <form action="{{ route('audit5s.export', ['id' => $audit->id]) }}" method="GET" target="_blank" style="display: inline;">
-    <button type="submit" class="btn btn-success btn-sm">
-        <i class="bi bi-file-earmark-excel"></i> Export Excel
-    </button>
-</form>
-
+                <form action="{{ route('audit5s.export', ['id' => $audit->id]) }}" method="GET" target="_blank" style="display: inline;">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-file-earmark-excel"></i> Export Excel
+                    </button>
+                </form>
 
                 {{-- Tabel Checklist --}}
-                <div class="table-responsive">
+                <div class="table-responsive mt-3">
                     <table class="table table-bordered table-sm align-middle">
                         <thead class="table-primary text-center">
                             <tr>
-                                <th style="width: 20%">Check Item</th>
+                                <th style="width: 5%">5S</th>
+                                <th style="width: 25%">Check Item</th>
                                 <th style="width: 40%">Description</th>
                                 <th style="width: 10%">Score</th>
-                                <th style="width: 20%">Comment</th>
+                                <th style="width: 10%">Comment</th>
                                 <th style="width: 10%">Files</th>
                             </tr>
                         </thead>
                         <tbody>
                             @php
-                                $scores = $audit->scores ?? [];
+                                $scores = collect($audit->scores ?? [])->map(function ($item, $index) {
+                                    $map = [
+                                        0 => 'Sort',
+                                        1 => 'Sort',
+                                        2 => 'Sort',
+                                        3 => 'Sort', // moved Frequency
+                                        4 => 'Sort',
+                                        5 => 'Set in Order',
+                                        6 => 'Set in Order',
+                                        7 => 'Set in Order', // moved Storage Indicator
+                                        8 => 'Set in Order',
+                                        9 => 'Shine',
+                                        10 => 'Shine',
+                                        11 => 'Shine',
+                                        12 => 'Shine',
+                                        13 => 'Standardize',
+                                        14 => 'Standardize',
+                                        15 => 'Standardize', // moved Check Sheet
+                                        16 => 'Standardize',
+                                        17 => 'Sustain',
+                                        18 => 'Sustain',
+                                        19 => 'Sustain',
+                                        20 => 'Sustain',
+                                    ];
+                                    $item['category'] = $map[$index] ?? '-';
+                                    return $item;
+                                })->groupBy('category');
+
+                                $categories = ['Sort', 'Set in Order', 'Shine', 'Standardize', 'Sustain'];
                             @endphp
 
-                            @forelse($scores as $item)
-                                <tr>
-                                    <td>{{ $item['check_item'] }}</td>
-                                    <td>{{ $item['description'] }}</td>
-                                    <td class="text-center">{{ $item['score'] }}</td>
-                                    <td>{{ $item['comment'] }}</td>
-                                    <td class="text-center">
-    @if (!empty($item['file']))
-        @php 
-            $fileExtension = pathinfo($item['file'], PATHINFO_EXTENSION);
-            $isImage = in_array(strtolower($fileExtension), ['jpg', 'jpeg', 'png']);
-        @endphp
+                            @forelse ($categories as $category)
+                                @if ($scores->has($category))
+                                    {{-- Header Kategori --}}
+                                    <tr style="background-color: #c8cdf4;" class="fw-bold text-uppercase">
+                                        <td colspan="6">5S: {{ $category }}</td>
+                                    </tr>
 
-        @if ($isImage)
-            <a href="{{ asset('storage/'.$item['file']) }}" target="_blank">
-                <img src="{{ asset('storage/'.$item['file']) }}" alt="Uploaded File" class="img-thumbnail" style="max-width: 120px; max-height: 120px;">
-            </a>
-        @else
-            <a href="{{ asset('storage/'.$item['file']) }}" target="_blank" class="btn btn-sm btn-primary">Download</a>
-        @endif
-    @else
-        <span class="text-muted">-</span>
-    @endif
-</td>
-                                </tr>
+                                    @php $subTotal = 0; @endphp
+
+                                    @foreach ($scores[$category] as $i => $item)
+                                        @php $subTotal += $item['score']; @endphp
+                                        <tr>
+                                            <td class="text-center">{{ $loop->iteration }}</td>
+                                            <td>{{ $item['check_item'] }}</td>
+                                            <td>{{ $item['description'] }}</td>
+                                            <td class="text-center">{{ $item['score'] }}</td>
+                                            <td>{{ $item['comment'] ?? '-' }}</td>
+                                            <td class="text-center">
+                                                @if (!empty($item['file']))
+                                                    @php 
+                                                        $ext = pathinfo($item['file'], PATHINFO_EXTENSION);
+                                                        $isImage = in_array(strtolower($ext), ['jpg', 'jpeg', 'png']);
+                                                    @endphp
+                                                    @if ($isImage)
+                                                        <a href="{{ asset('storage/' . $item['file']) }}" target="_blank">
+                                                            <img src="{{ asset('storage/' . $item['file']) }}" class="img-thumbnail" style="max-width: 80px;">
+                                                        </a>
+                                                    @else
+                                                        <a href="{{ asset('storage/' . $item['file']) }}" class="btn btn-sm btn-primary" target="_blank">Download</a>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+
+                                    {{-- Sub Total --}}
+                                    <tr class="fw-bold">
+                                        <td colspan="3" class="text-end">Sub Total</td>
+                                        <td class="text-center">{{ $subTotal }}</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                @endif
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">No data found</td>
+                                    <td colspan="6" class="text-center text-muted">No data available</td>
                                 </tr>
                             @endforelse
                         </tbody>

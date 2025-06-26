@@ -10,53 +10,45 @@ use Illuminate\Support\Facades\Storage;
 class SauditController extends Controller
 {
     public function index()
-{
-    $audits = Saudit::orderBy('created_at', 'desc')->get();
+    {
+        $audits = Saudit::orderBy('created_at', 'desc')->get();
 
-    $actualScores = [0, 0, 0, 0, 0]; // Sort, Set in Order, Shine, Standardize, Sustain
-    $targetScores = [16, 16, 16, 16, 16]; // 4 pertanyaan x 4 poin per kategori
+        $actualScores = [0, 0, 0, 0, 0]; // Sort, Set in Order, Shine, Standardize, Sustain
+        $targetScores = [16, 16, 16, 16, 16];
 
-    if ($audits->count() > 0) {
-        $categoryMap = [
-            1 => 'Sort', 2 => 'Set in Order', 3 => 'Shine', 4 => 'Standardize', 5 => 'Sustain',
-            6 => 'Sort', 7 => 'Set in Order', 8 => 'Shine', 9 => 'Standardize', 10 => 'Sustain',
-            11 => 'Sort', 12 => 'Set in Order', 13 => 'Shine', 14 => 'Standardize', 15 => 'Sustain',
-            16 => 'Sort', 17 => 'Set in Order', 18 => 'Shine', 19 => 'Standardize', 20 => 'Sustain',
-        ];
+        if ($audits->count() > 0) {
+            $scoresByCategory = [];
 
-        $scoresByCategory = [];
+            foreach ($audits as $audit) {
+                $scoreData = $audit->scores;
 
-        foreach ($audits as $audit) {
-            $scoreData = $audit->scores;
-
-            foreach ($scoreData as $questionId => $data) {
-                $category = $categoryMap[$questionId] ?? null;
-                if ($category) {
-                    $scoresByCategory[$category][] = $data['score'];
+                foreach ($scoreData as $data) {
+                    $category = $data['category'] ?? null;
+                    if ($category) {
+                        $scoresByCategory[$category][] = $data['score'];
+                    }
                 }
             }
-        }
 
-        $categories = ['Sort', 'Set in Order', 'Shine', 'Standardize', 'Sustain'];
-        $averageScores = [];
+            $categories = ['Sort', 'Set in Order', 'Shine', 'Standardize', 'Sustain'];
+            $averageScores = [];
 
-        foreach ($categories as $i => $cat) {
-            if (!empty($scoresByCategory[$cat])) {
-                $totalScore = array_sum($scoresByCategory[$cat]);
-                $totalCount = count($scoresByCategory[$cat]);
-                $average = $totalCount > 0 ? round($totalScore / $totalCount, 2) : 0;
-                $averageScores[$cat] = $average;
-            } else {
-                $averageScores[$cat] = 0;
+            foreach ($categories as $i => $cat) {
+                if (!empty($scoresByCategory[$cat])) {
+                    $totalScore = array_sum($scoresByCategory[$cat]);
+                    $totalCount = count($scoresByCategory[$cat]);
+                    $average = $totalCount > 0 ? round($totalScore / $totalCount, 2) : 0;
+                    $averageScores[$cat] = $average;
+                } else {
+                    $averageScores[$cat] = 0;
+                }
+
+                $actualScores[$i] = $averageScores[$cat];
             }
-
-            $actualScores[$i] = $averageScores[$cat]; // Update actual score per kategori
         }
+
+        return view('saudit.index', compact('audits', 'actualScores', 'targetScores'));
     }
-
-    return view('saudit.index', compact('audits', 'actualScores', 'targetScores'));
-}
-
 
     private function mapIndexToCategory($index)
     {
@@ -100,15 +92,17 @@ class SauditController extends Controller
                 $filePath = $uploadedFile->store('saudit_files', 'public');
             }
 
+            $category = $this->mapIndexToCategory($index + 1);
+
             $scores[$index] = [
                 'score' => (int) $item['score'],
                 'comment' => $item['comment'] ?? '',
                 'check_item' => $item['check_item'],
                 'description' => $item['description'],
                 'file' => $filePath,
+                'category' => $category,
             ];
 
-            $category = $this->mapIndexToCategory($index + 1);
             if ($category) {
                 $categoryScores[$category][] = (int) $item['score'];
             }
@@ -173,15 +167,17 @@ class SauditController extends Controller
                 $filePath = $uploadedFile->store('saudit_files', 'public');
             }
 
+            $category = $this->mapIndexToCategory($index + 1);
+
             $scores[$index] = [
                 'score' => (int) $item['score'],
                 'comment' => $item['comment'] ?? '',
                 'check_item' => $item['check_item'],
                 'description' => $item['description'],
                 'file' => $filePath,
+                'category' => $category,
             ];
 
-            $category = $this->mapIndexToCategory($index + 1);
             if ($category) {
                 $categoryScores[$category][] = (int) $item['score'];
             }
@@ -230,6 +226,22 @@ class SauditController extends Controller
 
     public function createShop($name)
     {
-        return view('saudit.createShop', compact('name'));
+        $decodedName = urldecode($name);
+        $shop = Shop::where('name', $decodedName)->first();
+
+        $shopImage = null;
+        if ($shop) {
+            $filename = strtolower(str_replace(' ', '_', $shop->name)) . '.png';
+            $path = public_path('storage/shop_images/' . $filename);
+
+            if (file_exists($path)) {
+                $shopImage = $filename;
+            }
+        }
+
+        return view('saudit.createShop', [
+            'name' => $decodedName,
+            'shopImage' => $shopImage,
+        ]);
     }
 }

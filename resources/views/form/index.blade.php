@@ -207,5 +207,16 @@
     });
 </script>
 
+<script>
+document.querySelector('form').addEventListener('submit', function (e) {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...`;
+    }
+});
+</script>
+
+
 </body>
 </html>

@@ -11,6 +11,12 @@
 
 <main>
 
+  @if(!empty($shopImage) && file_exists(public_path('storage/shop_images/' . $shopImage)))
+  <div class="container mt-4 text-center">
+    <img src="{{ asset('storage/shop_images/' . $shopImage) }}" class="img-fluid rounded shadow mb-3" style="max-height: 400px;" alt="{{ $name }}">
+  </div>
+@endif
+
   <div class="container my-4">
     <div class="row">
         <div class="col-md-8 d-flex">
@@ -222,7 +228,12 @@ document.addEventListener('DOMContentLoaded', function () {
         break;
       }
     }
-  }
+  } else {
+      //  Disable submit button to prevent double submission
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Submitting...';
+    }
 });
 
 

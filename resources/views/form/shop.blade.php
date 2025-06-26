@@ -35,7 +35,7 @@
 @endif
 
 
-  <form method="POST" action="{{ route('risk-assessment.store') }}" enctype="multipart/form-data">
+  <form id="risk-form" method="POST" action="{{ route('risk-assessment.store') }}" enctype="multipart/form-data">
     @csrf
 
     <div class="mb-3">
@@ -47,7 +47,7 @@
     <div id="risk-assessment-container"></div>
 
     <div class="d-flex justify-content-end mb-2">
-      <button type="submit" class="btn btn-success"> Submit </button>
+     <button type="submit" id="submit-btn" class="btn btn-success"> Submit </button>
     </div>
 
     <div class="d-flex justify-content-start mb-3">
@@ -57,6 +57,19 @@
     </div>
   </form>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const form      = document.getElementById('risk-form');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', function(){
+      // disable button to prevent double-click
+      submitBtn.disabled = true;
+      // optional: change text to give feedback
+      submitBtn.innerText = 'Submitting…';
+    });
+  });
+</script>
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
