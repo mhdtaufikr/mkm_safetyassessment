@@ -32,25 +32,25 @@
   <form id="risk-form" method="POST" action="{{ route('risk-assessment.store') }}" enctype="multipart/form-data">
     @csrf
 
-    <div class="row g-3 mb-4">
-      <div class="col-md-4 col-12">
-        <label class="form-label fw-bold">Shop</label>
-        <input type="text" class="form-control" value="{{ $shopName }}" readonly disabled>
-        <input type="hidden" name="shop_id" value="{{ $shopId }}">
-      </div>
-
-      <div class="col-md-4 col-12">
-        <label class="form-label fw-bold">Date</label>
-        @php $today = date('Y-m-d'); @endphp
-        <input type="date" class="form-control" value="{{ $today }}" readonly disabled>
-        <input type="hidden" name="date" value="{{ $today }}">
-      </div>
-
-      <div class="col-md-4 col-12">
-        <label class="form-label fw-bold">Accessor</label>
-        <input type="text" id="main-accessor" class="form-control" value="{{ old('accessor') }}" required>
-      </div>
-    </div>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4 col-12">
+            <label class="form-label fw-bold">Shop</label>
+            <input type="text" class="form-control" value="{{ $shopName }}" readonly disabled>
+            <input type="hidden" name="shop_id" value="{{ $shopId }}">
+          </div>
+    
+          <div class="col-md-4 col-12">
+            <label class="form-label fw-bold">Date</label>
+            @php $today = date('Y-m-d'); @endphp
+            <input type="date" class="form-control" value="{{ $today }}" readonly disabled>
+            <input type="hidden" name="date" value="{{ $today }}">
+          </div>
+    
+          <div class="col-md-4 col-12">
+            <label class="form-label fw-bold">Accessor</label>
+            <input type="text" id="main-accessor" class="form-control" value="{{ old('accessor') }}" required>
+          </div>
+        </div>
 
     <div id="risk-assessment-container"></div>
 
