@@ -17,16 +17,18 @@ class HomeController extends Controller
     {
         $activeUsers = User::where('last_login_at', '>=', Carbon::now()->subDay())->count();
         $status = $request->input('status');
-        $month = $request->input('month', now()->format('m'));
-        $year = $request->input('year', now()->format('Y'));
+        $month = $request->input('month');
+        $year = $request->input('year');
 
-        $totalShops = Shop::count();
+        $totalShops = Shop::count(); 
 
         $query = RiskAssessment::query();
 
-        // Apply date filters
+        // Filter bulan & tahun jika ada
+        if ($month && $year) {
         $query->whereMonth('created_at', $month)
-              ->whereYear('created_at', $year);
+        ->whereYear('created_at', $year);
+        }
 
         // Apply status filter
         if ($status === 'closed') {

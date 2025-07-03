@@ -126,8 +126,8 @@
         <!-- Right Section -->
         <div class="login-card">
             <div class="login-card-content">
-                <img src="{{ asset('assets/img/mkm_logo.png') }}" alt="SafetyAssessment" style="height:60px; width:auto;">
-                <h2>SafetyAssessment</h2>
+                <img src="{{ asset('assets/img/Safety Assessment2.png') }}" alt="SafetyAssessment" style="height:60px; width:auto;">
+                <h2>Safety & 5S</h2>
                 <small>Manage Your Login Page</small>
 
                 <!-- Alerts -->

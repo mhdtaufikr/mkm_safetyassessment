@@ -9,46 +9,62 @@ use Illuminate\Support\Facades\Storage;
 
 class SauditController extends Controller
 {
-    public function index()
-    {
-        $audits = Saudit::orderBy('created_at', 'desc')->get();
+    public function index(Request $request)
+{
+    $query = Saudit::query();
 
-        $actualScores = [0, 0, 0, 0, 0]; // Sort, Set in Order, Shine, Standardize, Sustain
-        $targetScores = [16, 16, 16, 16, 16];
+    // Filter berdasarkan bulan dan tahun jika diisi
+    if ($request->filled('month') && $request->filled('year')) {
+        $query->whereMonth('date', $request->month)
+              ->whereYear('date', $request->year);
+    }
 
-        if ($audits->count() > 0) {
-            $scoresByCategory = [];
+    // Filter berdasarkan range tanggal jika ada
+    if ($request->filled('from') && $request->filled('to')) {
+        $query->whereBetween('date', [$request->from, $request->to]);
+    }
 
-            foreach ($audits as $audit) {
-                $scoreData = $audit->scores;
+    $audits = $query->orderBy('created_at', 'desc')->get();
 
-                foreach ($scoreData as $data) {
-                    $category = $data['category'] ?? null;
-                    if ($category) {
-                        $scoresByCategory[$category][] = $data['score'];
-                    }
+    $actualScores = [0, 0, 0, 0, 0]; // Sort, Set in Order, Shine, Standardize, Sustain
+    $targetScores = [16, 16, 16, 16, 16];
+
+    if ($audits->count() > 0) {
+        $scoresByCategory = [];
+
+        foreach ($audits as $audit) {
+            $scoreData = is_string($audit->scores) ? json_decode($audit->scores, true) : $audit->scores;
+            foreach ($scoreData as $data) {
+                $category = $data['category'] ?? null;
+                if ($category) {
+                    $scoresByCategory[$category][] = $data['score'];
                 }
-            }
-
-            $categories = ['Sort', 'Set in Order', 'Shine', 'Standardize', 'Sustain'];
-            $averageScores = [];
-
-            foreach ($categories as $i => $cat) {
-                if (!empty($scoresByCategory[$cat])) {
-                    $totalScore = array_sum($scoresByCategory[$cat]);
-                    $totalCount = count($scoresByCategory[$cat]);
-                    $average = $totalCount > 0 ? round($totalScore / $totalCount, 2) : 0;
-                    $averageScores[$cat] = $average;
-                } else {
-                    $averageScores[$cat] = 0;
-                }
-
-                $actualScores[$i] = $averageScores[$cat];
             }
         }
 
-        return view('saudit.index', compact('audits', 'actualScores', 'targetScores'));
+        $categories = ['Sort', 'Set in Order', 'Shine', 'Standardize', 'Sustain'];
+        $averageScores = [];
+
+        foreach ($categories as $i => $cat) {
+            if (!empty($scoresByCategory[$cat])) {
+                $totalScore = array_sum($scoresByCategory[$cat]);
+                $totalCount = count($scoresByCategory[$cat]);
+                $average = $totalCount > 0 ? round($totalScore / $totalCount, 2) : 0;
+                $averageScores[$cat] = $average;
+            } else {
+                $averageScores[$cat] = 0;
+            }
+
+            $actualScores[$i] = $averageScores[$cat];
+        }
     }
+    
+    return view('saudit.index', compact('audits', 'actualScores', 'targetScores'))
+       ->with('month', $request->month)
+       ->with('year', $request->year);
+}
+
+
 
     private function mapIndexToCategory($index)
     {

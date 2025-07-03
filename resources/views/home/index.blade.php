@@ -114,7 +114,6 @@
                 <div class="flex-grow-1">
                     <canvas id="riskChart" width="90%" height="30"></canvas>
                 </div>
-
             </div>
         </div>
     </div>
@@ -147,17 +146,13 @@
             </div>
         </div>
 
-        
-
         <div class="mb-3 d-flex gap-2">
     <form action="{{ route('export.excel') }}" method="GET" target="_blank" style="display: inline;">
     <button type="submit" class="btn btn-success btn-sm">
         <i class="bi bi-file-earmark-excel"></i> Export Excel
-    </button>
-</form>
- 
+        </button>
+    </form>
 </div>
-
 
         <!-- All Risk Table -->
 <div class="card mb-4" id="all-risk-table">
@@ -241,13 +236,11 @@
                     @empty
                     <tr><td colspan="15" class="text-center">No risk assessments found.</td></tr>
                     @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-    
+                    </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>  
     </div>
 </main>
 
@@ -297,9 +290,6 @@
         $(window).resize(matchHeight);
     });
 </script>
-
-<!-- Bootstrap Bundle for Alert & Modal support -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Script Hilangkan Alert -->
 <script>

@@ -1,8 +1,40 @@
 @extends('layouts.master')
 
 @section('content')
+@php
+    $month = $month ?? date('m');
+    $year = $year ?? date('Y');
+@endphp
+
 <main>
     <div class="container-xl px-4 mt-4">
+
+        <!-- Filter Form -->
+<form method="GET" class="row g-3 mb-4 mt-2">
+    <div class="col-md-4">
+        <label for="month" class="form-label">Filter by Month</label>
+        <select name="month" id="month" class="form-select">
+            @foreach(range(1,12) as $m)
+                <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}" {{ request('month') == str_pad($m, 2, '0', STR_PAD_LEFT) ? 'selected' : '' }}>
+                    {{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="year" class="form-label">Filter by Year</label>
+        <select name="year" id="year" class="form-select">
+            @for($y = now()->year; $y >= 2020; $y--)
+                <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+            @endfor
+        </select>
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-outline-primary w-100">Filter</button>
+    </div>
+</form>
+
 
         {{-- Radar Chart --}}
         <div class="card shadow mb-4">
@@ -60,6 +92,8 @@
 </main>
 @endsection
 
+
+
 @push('scripts')
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -79,12 +113,13 @@
                 borderWidth: 2
             },
             {
-                label: 'Actual',
-                data: @json($actualScores),
-                backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 2
-            }
+    label: 'Actual ({{ \Carbon\Carbon::createFromDate(null, $month, 1)->locale("id")->translatedFormat("F") }} {{ $year }})',
+    data: @json($actualScores),
+    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+    borderColor: 'rgba(255, 159, 64, 1)',
+    borderWidth: 2
+}
+
         ]
     };
 

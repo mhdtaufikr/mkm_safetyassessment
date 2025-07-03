@@ -28,8 +28,17 @@
             padding-top: 20px;
             border-top: 1px solid #eee;
         }
+        .dropdown-menu {
+        z-index: 1055 !important;
+    }
+    .page-header {
+    position: relative;
+    z-index: 1;
+    overflow: visible;
+}
     </style>
 </head>
+
 <body>
     <div id="app">
     <div class="d-flex">
@@ -61,14 +70,11 @@
     </div>
 
     <!-- Main Content -->
-    <div class="flex-grow-1 p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4>@yield('title', 'Your Apps')</h4>
-            <img src="https://i.ibb.co/7Y0Y4rB/avatar.png" alt="User Avatar" style="width: 40px; border-radius: 50%;">
-        </div>
+<div class="flex-grow-1 p-4">
+    @include('layouts.includes._topbar')
 
-        @yield('content')
+
+    @yield('content')
 
         <!-- Footer -->
         <footer class="mt-5 text-muted">
@@ -82,5 +88,14 @@
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @stack('scripts')
+
+    <!-- Feather Icons -->
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        feather.replace();
+    });
+</script>
+
 </body>
 </html>

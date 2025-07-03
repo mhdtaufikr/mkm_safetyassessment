@@ -95,27 +95,45 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
     }
 
     public function registerEvents(): array
-    {
-        return [
-            AfterSheet::class => function(AfterSheet $event) {
-                $sheet = $event->sheet->getDelegate();
+{
+    return [
+        AfterSheet::class => function(AfterSheet $event) {
+            $sheet = $event->sheet->getDelegate();
+            $highestRow = $sheet->getHighestRow();
+            $highestColumn = $sheet->getHighestColumn();
 
-                // Freeze header
-                $sheet->freezePane('A2');
+            // Freeze header
+            $sheet->freezePane('A2');
 
-                // Auto width
-                foreach (range('A', 'X') as $column) {
-                    $sheet->getColumnDimension($column)->setAutoSize(true);
-                }
-
-                // Set row height
-                $rowCount = count($this->data);
-                for ($i = 2; $i <= $rowCount + 1; $i++) {
-                    $sheet->getRowDimension($i)->setRowHeight(85);
-                }
+            // Auto width for columns
+            foreach (range('A', 'X') as $column) {
+                $sheet->getColumnDimension($column)->setAutoSize(true);
             }
-        ];
-    }
+
+            // Row height for all rows with data
+            for ($i = 2; $i <= $highestRow; $i++) {
+                $sheet->getRowDimension($i)->setRowHeight(85);
+            }
+
+            // Border all cells
+            $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
+                ->getBorders()
+                ->getAllBorders()
+                ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+            // Wrap text and vertical align top
+            $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
+                ->getAlignment()
+                ->setWrapText(true)
+                ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP)
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+
+            // Center header
+            $sheet->getStyle("A1:{$highestColumn}1")->getAlignment()->setHorizontal('center');
+        }
+    ];
+}
+
 
     public function drawings()
     {
