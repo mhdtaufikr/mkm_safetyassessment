@@ -48,6 +48,16 @@
             </div>
         </div>
 
+        {{-- Export Excel Button --}}
+<div class="mb-3">
+    <form action="{{ route('audit5s.exportAll') }}" method="GET" target="_blank">
+        <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-file-earmark-excel"></i> Export Excel
+        </button>
+    </form>
+</div>
+
+
         {{-- Table --}}
         <div class="card shadow mt-3">
             <div class="card-header bg-primary text-white d-flex justify-content-between">

@@ -8,8 +8,10 @@ use Illuminate\Http\Request;
 
 class Audit5SExportController extends Controller
 {
-    public function export($auditId)
+    
+     public function exportAll()
     {
-        return Excel::download(new Audit5SExport($auditId), 'audit_5s_' . $auditId . '.xlsx');
+        return Excel::download(new Audit5SExport(), 'audit_5s_all.xlsx');
     }
+
 }

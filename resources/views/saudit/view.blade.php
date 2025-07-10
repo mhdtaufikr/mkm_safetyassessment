@@ -26,13 +26,6 @@
                     </div>
                 </div>
 
-                {{-- Export Excel Button --}}
-                <form action="{{ route('audit5s.export', ['id' => $audit->id]) }}" method="GET" target="_blank" style="display: inline;">
-                    <button type="submit" class="btn btn-success btn-sm">
-                        <i class="bi bi-file-earmark-excel"></i> Export Excel
-                    </button>
-                </form>
-
                 {{-- Tabel Checklist --}}
                 <div class="table-responsive mt-3">
                     <table class="table table-bordered table-sm align-middle">
@@ -55,22 +48,28 @@
                                         2 => 'Sort',
                                         3 => 'Sort', // moved Frequency
                                         4 => 'Sort',
-                                        5 => 'Set in Order',
+                                        5 => 'Sort',
                                         6 => 'Set in Order',
                                         7 => 'Set in Order', // moved Storage Indicator
                                         8 => 'Set in Order',
-                                        9 => 'Shine',
-                                        10 => 'Shine',
+                                        9 => 'Set in Order',
+                                        10 => 'Set in Order',
                                         11 => 'Shine',
                                         12 => 'Shine',
-                                        13 => 'Standardize',
-                                        14 => 'Standardize',
-                                        15 => 'Standardize', // moved Check Sheet
+                                        13 => 'Shine',
+                                        14 => 'Shine',
+                                        15 => 'Shine', // moved Check Sheet
                                         16 => 'Standardize',
-                                        17 => 'Sustain',
-                                        18 => 'Sustain',
-                                        19 => 'Sustain',
-                                        20 => 'Sustain',
+                                        17 => 'Standardize',
+                                        18 => 'Standardize',
+                                        19 => 'Standardize',
+                                        20 => 'Standardize',
+                                        21 => 'Sustain',
+                                        22 => 'Sustain',
+                                        23 => 'Sustain',
+                                        24 => 'Sustain',
+                                        25 => 'Sustain',
+                                        
                                     ];
                                     $item['category'] = $map[$index] ?? '-';
                                     return $item;

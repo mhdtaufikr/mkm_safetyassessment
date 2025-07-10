@@ -70,6 +70,31 @@ class HomeController extends Controller
             ->latest()
             ->get();
 
+        // Mapping labels
+        $severityLabels = [
+            1 => '1 - Insignificant',
+            2 => '2 - Minor',
+            3 => '3 - Moderate',
+            4 => '4 - Major',
+            5 => '5 - Catastrophic',
+        ];
+
+        $possibilityLabels = [
+            1 => '1 - Very Rare',
+            2 => '2 - Unlikely',
+            3 => '3 - Occasional',
+            4 => '4 - Frequent',
+            5 => '5 - Always',
+        ];
+        
+        $scopeLabels = [
+        1 => '1 - Man',
+        2 => '2 - Machine',
+        3 => '3 - Method',
+        4 => '4 - Material',
+        5 => '5 - Environment',
+        ];
+
         // Example data if needed for single form assessment
         $formAssessment = RiskAssessment::with('shop', 'detail')->find(31);
 
@@ -85,6 +110,9 @@ class HomeController extends Controller
             'user' => Auth::user(),
             'status' => $status,
             'activeUsers' => $activeUsers,
+            'severityLabels' => $severityLabels,
+            'possibilityLabels' => $possibilityLabels,
+            'scopeLabels' => $scopeLabels,
         ]);
     }
 

@@ -64,17 +64,15 @@ class SauditController extends Controller
        ->with('year', $request->year);
 }
 
-
-
     private function mapIndexToCategory($index)
-    {
-        if ($index >= 1 && $index <= 4) return 'Sort';
-        if ($index >= 5 && $index <= 8) return 'Set in Order';
-        if ($index >= 9 && $index <= 12) return 'Shine';
-        if ($index >= 13 && $index <= 16) return 'Standardize';
-        if ($index >= 17 && $index <= 20) return 'Sustain';
-        return null;
-    }
+{
+    if ($index >= 1 && $index <= 5) return 'Sort';
+    if ($index >= 6 && $index <= 10) return 'Set in Order';
+    if ($index >= 11 && $index <= 15) return 'Shine';
+    if ($index >= 16 && $index <= 20) return 'Standardize';
+    if ($index >= 21 && $index <= 25) return 'Sustain';
+    return null;
+}
 
     public function create()
     {
@@ -117,6 +115,7 @@ class SauditController extends Controller
                 'description' => $item['description'],
                 'file' => $filePath,
                 'category' => $category,
+                
             ];
 
             if ($category) {
@@ -241,23 +240,30 @@ class SauditController extends Controller
     }
 
     public function createShop($name)
-    {
-        $decodedName = urldecode($name);
-        $shop = Shop::where('name', $decodedName)->first();
+{
+    $decodedName = urldecode($name);
+    $shop = Shop::where('name', $decodedName)->first();
 
-        $shopImage = null;
-        if ($shop) {
-            $filename = strtolower(str_replace(' ', '_', $shop->name)) . '.png';
-            $path = public_path('storage/shop_images/' . $filename);
+    $shopImage = null;
+    $shopUpdatedAt = now(); // ✅ default jika shop tidak ditemukan
 
-            if (file_exists($path)) {
-                $shopImage = $filename;
-            }
+    if ($shop) {
+        $filename = strtolower(str_replace(' ', '_', $shop->name)) . '.png';
+        $path = public_path('storage/shop_images/' . $filename);
+
+        if (file_exists($path)) {
+            $shopImage = $filename;
         }
 
-        return view('saudit.createShop', [
-            'name' => $decodedName,
-            'shopImage' => $shopImage,
-        ]);
+        // ✅ update timestamp hanya jika ada
+        $shopUpdatedAt = $shop->updated_at ?? now();
     }
+
+    return view('saudit.createShop', [
+        'name' => $decodedName,
+        'shopImage' => $shopImage,
+        'shopUpdatedAt' => $shopUpdatedAt, // ✅ pastikan dikirim ke view
+    ]);
+}
+
 }

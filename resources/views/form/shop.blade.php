@@ -16,11 +16,13 @@
 <div class="container mt-4 mb-5">
   <h4 class="text-center fw-bold mb-4">Risk Assessment for Preventing Workplace Accidents</h4>
 
-  @if(!empty($shopImage) && file_exists(public_path('storage/shop_images/' . $shopImage)))
-    <div class="text-center mb-4">
-      <img src="{{ asset('storage/shop_images/' . $shopImage) }}" class="img-fluid rounded shadow" style="max-height: 400px;" alt="{{ $shopName }}">
-    </div>
-  @endif
+  @if(!empty($shopImage) && file_exists(public_path('storage/' . $shopImage)))
+  <div class="text-center mb-4">
+    <img src="{{ asset('storage/' . $shopImage) . '?v=' . \Carbon\Carbon::parse($shopUpdatedAt)->timestamp }}" 
+         class="img-fluid rounded shadow" style="max-height: 270px;" alt="{{ $shopName }}">
+  </div>
+@endif
+
 
   @if (session('success'))
   <div class="alert alert-success alert-dismissible fade show" role="alert">

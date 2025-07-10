@@ -67,6 +67,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/5s-form/{id}/view', [SauditController::class, 'show'])->name('saudit.view');
     Route::get('/saudit/dashboard', [SauditController::class, 'dashboard'])->name('saudit.dashboard');
     Route::get('/export-audit-5s/{id}', [Audit5SExportController::class, 'export'])->name('audit5s.export');
+    Route::get('/audit5s/export-all', [Audit5SExportController::class, 'exportAll'])->name('audit5s.exportAll');
+
 
     /*
     |--------------------------------------------------------------------------

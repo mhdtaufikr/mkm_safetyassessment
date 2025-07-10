@@ -102,11 +102,11 @@
                 <!-- Box Summary Tahun & Follow Up -->
                 <div class="me-3 d-flex flex-column justify-content-start align-items-center" style="width: 100px;">
                     <div class="border rounded p-2 shadow-sm bg-light w-90 text-center">
-                        <div class="fw-bold text-primary">Year</div>
+                        <div class="fw-bold text-black">Year</div>
                         <div class="fs-5">{{ $year }}</div>
                         <hr class="my-1">
-                        <div class="text-success small">Closed: {{ $allAssessments->where('is_followed_up', true)->count() }}</div>
-                        <div class="text-warning small">Open: {{ $allAssessments->where('is_followed_up', false)->count() }}</div>
+                        <div class="text-black small">Closed: {{ $allAssessments->where('is_followed_up', true)->count() }}</div>
+                        <div class="text-black small">Open: {{ $allAssessments->where('is_followed_up', false)->count() }}</div>
                     </div>
                 </div>
 
@@ -186,12 +186,12 @@
                         <td>{{ $index + 1 }}</td>
                         
                         <td>{{ $item->shop->name ?? 'Unknown Shop' }}</td>
-                        <td>{{ $item->scope_number ?? '-' }}</td>
+                        <td>{{ $scopeLabels[$item->scope_number] ?? $item->scope_number }}</td>
                         <td>{{ $item->finding_problem }}</td>
                         <td>{{ $item->potential_hazards }}</td>
                         <td>{{ $item->accessor}}</td>
-                        <td>{{ $item->severity }}</td>
-                        <td>{{ $item->possibility }}</td>
+                        <td>{{ $severityLabels[$item->severity] ?? $item->severity }}</td>
+                        <td>{{ $possibilityLabels[$item->possibility] ?? $item->possibility }}</td>
                         <td>{{ $item->score }}</td>
                         <td>
                             <span class="badge 
@@ -246,24 +246,50 @@
 
 @if(array_sum($riskLevelCounts) > 0)
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
 <script>
     const ctx = document.getElementById('riskChart');
-    new Chart(ctx, {
+
+    const riskChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Low', 'Medium', 'High', 'Extreme'],
             datasets: [{
                 label: 'Risk Levels',
-                data: @json($riskLevelCounts),
+                data: @json(array_values($riskLevelCounts)),
                 backgroundColor: ['#28a745', '#ffc107', '#fd7e14', '#dc3545'],
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false
-        }
+            maintainAspectRatio: false,
+            plugins: {
+                datalabels: {
+                    color: '#000',
+                    font: {
+                        weight: 'bold',
+                        size: 14,
+                    },
+                    formatter: (value, ctx) => {
+                        return value; // menampilkan jumlah langsung di bagian chart
+                    }
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#000'
+                    }
+                },
+                tooltip: {
+                    enabled: true // tetap aktif jika ingin ditampilkan saat hover juga
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
     });
 </script>
+
 @endif
 
 <!-- DataTables -->

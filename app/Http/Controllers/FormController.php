@@ -92,10 +92,12 @@ return redirect()->to('/qr/' . urlencode($shopName))
     $shopImage = strtolower(str_replace(' ', '_', $shop->name)) . '.png';
 
     return view('form.shop', [
-        'shopName' => $shop->name,
-        'shopId' => $shop->id,
-        'shopImage' => $shopImage // tambahkan variabel ini
-    ]);
+    'shopName' => $shop->name,
+    'shopId' => $shop->id,
+    'shopImage' => $shop->image, // Ambil dari DB, bukan dari manipulasi nama manual
+    'shopUpdatedAt' => $shop->updated_at,
+]);
+
 }
 
 

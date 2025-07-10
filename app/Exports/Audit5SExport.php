@@ -5,110 +5,101 @@ namespace App\Exports;
 use App\Models\Saudit;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Events\AfterSheet;
 
 class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
 {
-    protected $audit;
+    protected $audits;
+    protected $highlightRows = [];
+    protected $imageRows = [];
 
-    public function __construct($auditId)
+    public function __construct()
     {
-        $this->audit = Saudit::findOrFail($auditId);
+        $this->audits = Saudit::all();
     }
 
     public function array(): array
     {
         $rows = [];
+        $rowCounter = 1;
 
-        // Header Informasi
-        $rows[] = ['Shop', $this->audit->shop];
-        $rows[] = ['Date', \Carbon\Carbon::parse($this->audit->date)->format('d M Y')];
-        $rows[] = ['Auditor', $this->audit->auditor];
-        $rows[] = ['']; // Spasi kosong
+        foreach ($this->audits as $index => $audit) {
+            $info = [
+                ['No.', $index + 1],
+                ['Date', \Carbon\Carbon::parse($audit->date)->format('d M Y')],
+                ['Shop', $audit->shop],
+                ['Auditor', $audit->auditor],
+                ['Final Score', number_format($audit->final_score, 2) . '%'],
+                ['General Comments', $audit->comments],
+                [''],
+                ['Category', 'Check Item', 'Description', 'Score', 'Comment', 'File']
+            ];
 
-        // Mapping kategori dan urutan
-        $categories = [
-            'Sort' => [],
-            'Set In Order' => [],
-            'Shine' => [],
-            'Standardize' => [],
-            'Sustain' => [],
-        ];
-
-        $map = [
-            0 => 'Sort',
-            1 => 'Sort',
-            2 => 'Sort',
-            3 => 'Sort', // Frequency
-            4 => 'Sort',
-            5 => 'Set In Order',
-            6 => 'Set In Order',
-            7 => 'Set In Order', // Storage Indicator
-            8 => 'Set In Order',
-            9 => 'Shine',
-            10 => 'Shine',
-            11 => 'Shine', // Cleaning Tools
-            12 => 'Shine',
-            13 => 'Standardize',
-            14 => 'Standardize',
-            15 => 'Standardize', // KPI
-            16 => 'Standardize',
-            17 => 'Sustain',
-            18 => 'Sustain',
-            19 => 'Sustain',
-            20 => 'Sustain', // Check Sheet
-        ];
-
-        foreach ($this->audit->scores ?? [] as $i => $item) {
-            $cat = $map[$i] ?? ($item['category'] ?? 'Uncategorized');
-            if (!isset($categories[$cat])) {
-                $categories[$cat] = [];
+            foreach ($info as $line) {
+                $rows[] = $line;
+                $this->highlightRows[] = $rowCounter++;
             }
-            $categories[$cat][] = $item;
-        }
 
-        $rowIndex = 6; // baris mulai checklist (untuk referensi styles)
-        foreach ($categories as $catName => $checklists) {
-            if (empty($checklists)) continue;
+            $categories = [
+                'Sort' => [], 'Set In Order' => [],
+                'Shine' => [], 'Standardize' => [], 'Sustain' => [],
+            ];
 
-            $rows[] = [$catName]; // Subjudul
-            $rows[] = ['Check Item', 'Description', 'Score', 'Comment', 'File'];
+            $categoryMap = [
+                0 => 'Sort', 1 => 'Sort', 2 => 'Sort', 3 => 'Sort', 4 => 'Sort', 5 => 'Sort',
+                6 => 'Set In Order', 7 => 'Set In Order', 8 => 'Set In Order', 9 => 'Set In Order', 10 => 'Set In Order',
+                11 => 'Shine', 12 => 'Shine', 13 => 'Shine', 14 => 'Shine', 15 => 'Shine',
+                16 => 'Standardize', 17 => 'Standardize', 18 => 'Standardize', 19 => 'Standardize', 20 => 'Standardize',
+                21 => 'Sustain', 22 => 'Sustain', 23 => 'Sustain', 24 => 'Sustain', 25 => 'Sustain',
+            ];
 
-            foreach ($checklists as $item) {
+            foreach ($audit->scores ?? [] as $i => $item) {
+                $cat = $categoryMap[$i] ?? 'Uncategorized';
+
                 $rows[] = [
+                    $cat,
                     $item['check_item'] ?? '',
                     $item['description'] ?? '',
                     $item['score'] ?? '',
                     $item['comment'] ?? '',
-                    $item['file'] ?? '',
+                    isset($item['file']) ? 'Foto' : '',
                 ];
+
+                if (!empty($item['file'])) {
+                    $this->imageRows[] = [
+                        'row' => $rowCounter,
+                        'path' => storage_path('app/public/saudit_files/' . basename($item['file'])),
+                    ];
+                }
+
+                $rowCounter++;
             }
 
-            $rows[] = ['']; // Spacer antar kategori
+            $rows[] = [''];
+            $rowCounter++;
+            $rows[] = ['──────────────────────────────────────────────────────'];
+            $rowCounter++;
         }
-
-        // Footer
-        $rows[] = ['Final Score (%)', number_format($this->audit->final_score, 2)];
-        $rows[] = ['General Comments', $this->audit->comments];
 
         return $rows;
     }
 
     public function headings(): array
     {
-        return []; // Heading manual di array()
+        return [];
     }
 
     public function styles(Worksheet $sheet)
     {
-        return [
-            1 => ['font' => ['bold' => true]],
-            2 => ['font' => ['bold' => true]],
-            3 => ['font' => ['bold' => true]],
-        ];
+        $styles = [];
+        foreach ($this->highlightRows as $row) {
+            $styles[$row] = ['font' => ['bold' => true, 'color' => ['rgb' => '1F4E78']]];
+        }
+        return $styles;
     }
 
     public function registerEvents(): array
@@ -118,47 +109,55 @@ class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
                 $sheet = $event->sheet->getDelegate();
                 $highestRow = $sheet->getHighestRow();
 
-                // Auto-size kolom
+                // Orientasi dan margin
+                $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+                $sheet->getPageMargins()->setTop(0.25)->setBottom(0.25)->setLeft(0.25)->setRight(0.25);
+                $sheet->getSheetView()->setZoomScale(100);
+
+                // Kolom auto size A-E, kolom F untuk gambar diatur manual
                 foreach (range('A', 'E') as $col) {
                     $sheet->getColumnDimension($col)->setAutoSize(true);
                 }
+                $sheet->getColumnDimension('F')->setWidth(40); // untuk gambar landscape
 
-                // Wrap text dan rata atas
-                $sheet->getStyle("A1:E{$highestRow}")
-                    ->getAlignment()
-                    ->setWrapText(true)
-                    ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP);
+                // Wrap text, border
+                $sheet->getStyle("A1:F{$highestRow}")
+                    ->getAlignment()->setWrapText(true)->setVertical('top');
 
-                // Border semua cell
-                $sheet->getStyle("A1:E{$highestRow}")
-                    ->getBorders()
-                    ->getAllBorders()
-                    ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                $sheet->getStyle("A1:F{$highestRow}")
+                    ->getBorders()->getAllBorders()->setBorderStyle('thin');
 
-                // Style Subjudul Kategori
-                for ($row = 5; $row <= $highestRow; $row++) {
-                    $cellValue = $sheet->getCell("A{$row}")->getValue();
-                    if (in_array($cellValue, ['Sort', 'Set In Order', 'Shine', 'Standardize', 'Sustain'])) {
-                        $sheet->mergeCells("A{$row}:E{$row}");
-                        $sheet->getStyle("A{$row}")->applyFromArray([
-                            'font' => ['bold' => true, 'size' => 12],
-                            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+                // Header checklist
+                for ($row = 1; $row <= $highestRow; $row++) {
+                    $val = $sheet->getCell("A{$row}")->getValue();
+                    if ($val === 'Category') {
+                        $sheet->getStyle("A{$row}:F{$row}")->applyFromArray([
+                            'font' => ['bold' => true],
                             'fill' => [
-                                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                                'fillType' => 'solid',
                                 'startColor' => ['rgb' => 'DDEBF7'],
                             ],
                         ]);
                     }
 
-                    // Heading baris kedua setelah kategori
-                    if ($sheet->getCell("A{$row}")->getValue() === 'Check Item') {
-                        $sheet->getStyle("A{$row}:E{$row}")->applyFromArray([
-                            'font' => ['bold' => true],
-                            'fill' => [
-                                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                                'startColor' => ['rgb' => 'BDD7EE'],
-                            ],
-                        ]);
+                    if (str_contains($val, '────')) {
+                        $sheet->mergeCells("A{$row}:F{$row}");
+                        $sheet->getStyle("A{$row}")->getFont()->getColor()->setRGB('AAAAAA');
+                    }
+                }
+
+                // Tambah gambar ke kolom F (landscape mode)
+                foreach ($this->imageRows as $img) {
+                    if (file_exists($img['path']) && exif_imagetype($img['path'])) {
+                        $drawing = new Drawing();
+                        $drawing->setPath($img['path']);
+                        $drawing->setWidth(160); // Mengatur gambar menyamping
+                        $drawing->setCoordinates('F' . $img['row']);
+                        $drawing->setOffsetX(5);
+                        $drawing->setWorksheet($sheet);
+
+                        // Atur tinggi baris agar gambar terlihat proporsional
+                        $sheet->getRowDimension($img['row'])->setRowHeight(85);
                     }
                 }
             },
