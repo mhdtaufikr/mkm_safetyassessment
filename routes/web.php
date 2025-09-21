@@ -14,7 +14,6 @@ use App\Http\Controllers\SaFindingController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\SauditController;
 use App\Http\Controllers\Audit5SExportController;
-
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -39,6 +38,18 @@ Route::get('/form/audit/5s/{name}', [SauditController::class, 'createShop'])->na
 
 // Risk Assessment Public Submission
 Route::post('/risk-assessment', [FormController::class, 'store'])->name('risk-assessment.store');
+
+
+Route::post('/keepalive', function () {
+    // Touch the session so it doesn’t expire while the user is active on the page
+    session()->put('last_ping', now());
+    return response()->noContent();
+})->name('keepalive');
+
+Route::get('/csrf/refresh', function () {
+    // Issue a fresh token (still tied to the same session)
+    return response()->json(['token' => csrf_token()]);
+})->name('csrf.refresh');
 
 /*
 |--------------------------------------------------------------------------

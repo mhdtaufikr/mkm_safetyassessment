@@ -10,6 +10,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Events\AfterSheet;
+use Carbon\Carbon;
 
 class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
 {
@@ -19,7 +20,10 @@ class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
 
     public function __construct()
     {
-        $this->audits = Saudit::all();
+        // Mengambil data dalam seminggu terakhir dan mengurutkannya dari yang terbaru
+        $this->audits = Saudit::where('created_at', '>=', Carbon::now()->subWeek())
+                            ->latest()
+                            ->get();
     }
 
     public function array(): array
@@ -44,11 +48,6 @@ class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
                 $this->highlightRows[] = $rowCounter++;
             }
 
-            $categories = [
-                'Sort' => [], 'Set In Order' => [],
-                'Shine' => [], 'Standardize' => [], 'Sustain' => [],
-            ];
-
             $categoryMap = [
                 0 => 'Sort', 1 => 'Sort', 2 => 'Sort', 3 => 'Sort', 4 => 'Sort', 5 => 'Sort',
                 6 => 'Set In Order', 7 => 'Set In Order', 8 => 'Set In Order', 9 => 'Set In Order', 10 => 'Set In Order',
@@ -57,7 +56,10 @@ class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
                 21 => 'Sustain', 22 => 'Sustain', 23 => 'Sustain', 24 => 'Sustain', 25 => 'Sustain',
             ];
 
-            foreach ($audit->scores ?? [] as $i => $item) {
+            // Pastikan 'scores' adalah array sebelum di-loop
+            $scores = is_array($audit->scores) ? $audit->scores : json_decode($audit->scores, true) ?? [];
+
+            foreach ($scores as $i => $item) {
                 $cat = $categoryMap[$i] ?? 'Uncategorized';
 
                 $rows[] = [

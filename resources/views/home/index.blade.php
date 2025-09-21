@@ -201,7 +201,11 @@
                                 @elseif($item->risk_level == 'Extreme') bg-danger
                                 @else bg-secondary
                                 @endif">
-                                {{ $item->risk_level }}
+                                @if($item->risk_level == 'Medium')
+                                    Moderate
+                                @else
+                                    {{ $item->risk_level }}
+                                @endif
                             </span>
                         </td>
                         <td>{{ $item->risk_reduction_proposal }}</td>

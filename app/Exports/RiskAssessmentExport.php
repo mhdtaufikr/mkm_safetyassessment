@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Events\AfterSheet;
+use Carbon\Carbon;
 
 class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithEvents
 {
@@ -42,7 +43,11 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
 
     public function __construct()
     {
-        $this->data = RiskAssessment::with(['shop', 'finding'])->get();
+        // Mengambil data dan langsung mengurutkannya dari yang terbaru
+      $this->data = RiskAssessment::with(['shop', 'finding'])
+                ->whereDate('created_at', Carbon::today())
+                ->latest()
+                ->get();
     }
 
     public function collection()

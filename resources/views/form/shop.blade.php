@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Risk Assessment Form - {{ $shopName }}</title>
@@ -199,6 +201,159 @@ accessorInput.addEventListener('input', function () {
       submitBtn.innerText = 'Submitting…';
     });
   });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('risk-form');
+  const container = document.getElementById('risk-assessment-container');
+
+  // === Required field helpers ===
+  function fieldLabel(el) {
+    const wrap = el.closest('.col-md-4, .col-md-6, .col-md-8, .col-12');
+    const lbl = wrap ? wrap.querySelector('label.form-label') : null;
+    return (lbl ? lbl.textContent.trim() : (el.name || el.id || 'This field')).replace(/\[\]$/, '');
+  }
+  function ensureFeedback(el) {
+    let fb = el.nextElementSibling && el.nextElementSibling.classList?.contains('invalid-feedback')
+      ? el.nextElementSibling : null;
+    if (!fb) {
+      fb = document.createElement('div');
+      fb.className = 'invalid-feedback';
+      el.parentNode.insertBefore(fb, el.nextSibling);
+    }
+    return fb;
+  }
+  function validate(el) {
+    if (!el.hasAttribute('required')) return true;
+    let ok = true;
+    if (el.tagName === 'SELECT') ok = el.value !== '';
+    else ok = String(el.value || '').trim().length > 0;
+
+    if (!ok) {
+      const fb = ensureFeedback(el);
+      fb.textContent = fieldLabel(el) + ' is required.';
+      el.classList.add('is-invalid');
+    } else {
+      el.classList.remove('is-invalid');
+      const fb = el.nextElementSibling;
+      if (fb && fb.classList.contains('invalid-feedback')) fb.textContent = '';
+    }
+    return ok;
+  }
+
+  form.addEventListener('focusout', (e) => {
+    const el = e.target;
+    if (form.contains(el) && el.matches('input[required], select[required], textarea[required]')) {
+      validate(el);
+    }
+  });
+  form.addEventListener('input', (e) => {
+    const el = e.target;
+    if (el.classList.contains('is-invalid')) validate(el);
+  });
+
+  form.addEventListener('submit', (e) => {
+    const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
+    let allValid = true;
+    requiredFields.forEach((el) => { if (!validate(el)) allValid = false; });
+    if (!allValid) {
+      e.preventDefault();
+      const firstInvalid = form.querySelector('.is-invalid');
+      if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const btn = document.getElementById('submit-btn');
+      if (btn) { btn.disabled = false; btn.innerText = 'Submit'; }
+    }
+  });
+
+  // === Add "Remove" button dynamically for all future cards ===
+  function addRemoveButton(card) {
+    if (!card) return;
+    const header = card.querySelector('.card-header');
+    if (!header || header.querySelector('.remove-entry')) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-danger btn-sm remove-entry';
+    btn.textContent = 'Remove';
+    btn.style.float = 'right';
+    header.appendChild(btn);
+  }
+
+  // Observe new cards and add remove button immediately
+  const mo = new MutationObserver((mutations) => {
+    mutations.forEach((m) => {
+      m.addedNodes.forEach((node) => {
+        if (node.nodeType !== 1) return;
+        if (node.matches?.('.card.border-primary')) {
+          addRemoveButton(node);
+        } else {
+          const card = node.querySelector?.('.card.border-primary');
+          if (card) addRemoveButton(card);
+        }
+      });
+    });
+  });
+  mo.observe(container, { childList: true });
+
+  // Delegate remove button click
+  container.addEventListener('click', (e) => {
+    if (e.target && e.target.classList.contains('remove-entry')) {
+      e.preventDefault();
+      const card = e.target.closest('.card.border-primary');
+      if (card) card.remove();
+    }
+  });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Helpers
+  function getToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content ||
+           document.querySelector('input[name="_token"]')?.value || '';
+  }
+  function setToken(newToken) {
+    // Update meta tag
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) meta.setAttribute('content', newToken);
+    // Update all hidden _token inputs (Blade @csrf fields)
+    document.querySelectorAll('input[name="_token"]').forEach(i => i.value = newToken);
+  }
+
+  // 1) Keep session alive (every 5 minutes)
+  function pingKeepAlive() {
+    const token = getToken();
+    if (!token) return;
+    fetch("{{ route('keepalive') }}", {
+      method: "POST",
+      headers: { "X-CSRF-TOKEN": token, "Accept": "application/json" },
+      cache: "no-store",
+      credentials: "same-origin",
+    }).catch(() => {});
+  }
+  pingKeepAlive();
+  setInterval(pingKeepAlive, 5 * 60 * 1000);
+
+  // Also ping immediately when user returns to the tab (after being idle/inactive)
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') pingKeepAlive();
+  });
+
+  // 2) Periodically refresh CSRF token (every 10 minutes)
+  async function refreshCsrf() {
+    try {
+      const res = await fetch("{{ route('csrf.refresh') }}", {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.token) setToken(data.token);
+    } catch (_) {}
+  }
+  refreshCsrf();
+  setInterval(refreshCsrf, 10 * 60 * 1000);
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

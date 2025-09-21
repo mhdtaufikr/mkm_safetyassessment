@@ -67,8 +67,8 @@ class FormController extends Controller
 
     // Kirim email notifikasi
     if ($firstAssessment) {
-    Mail::to('muhammad.taufik@ptmkm.co.id')
-       // ->cc(['muhammad.taufik@ptmkm.co.id', 'wiwit.sabdo@ptmkm.co.id'])
+    Mail::to('wiwit.sabdo@ptmkm.co.id')
+        ->cc(['muhammad.taufik@ptmkm.co.id'])
         ->send(new RiskAssessmentSubmittedMail($firstAssessment));
 }
 
