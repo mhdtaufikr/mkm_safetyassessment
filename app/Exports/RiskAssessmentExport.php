@@ -48,7 +48,8 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
     public function __construct()
     {
         $this->data = RiskAssessment::with(['shop', 'finding'])
-            ->whereDate('created_at', Carbon::today())
+            ->whereMonth('created_at', 11)
+            ->whereYear('created_at', Carbon::now()->year)
             ->latest()
             ->get();
     }
@@ -105,78 +106,99 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
     }
 
     public function registerEvents(): array
-    {
-        return [
-            AfterSheet::class => function (AfterSheet $event) {
-                $sheet = $event->sheet->getDelegate();
-                $highestRow = $sheet->getHighestRow();
-                $highestColumn = $sheet->getHighestColumn();
+{
+    return [
+        AfterSheet::class => function (AfterSheet $event) {
+            $sheet   = $event->sheet->getDelegate();
+            $parent  = $sheet->getParent(); // workbook
+            $highestRow    = $sheet->getHighestRow();
+            $highestColumn = $sheet->getHighestColumn();
 
-                // Landscape & fit
-                $sheet->getPageSetup()
-                    ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
-                    ->setFitToWidth(1)->setFitToHeight(0);
+            // === Default: Font Ebrima 12pt untuk seluruh workbook ===
+            $parent->getDefaultStyle()->getFont()
+                ->setName('Ebrima')
+                ->setSize(18);
 
-                // Margin
-                $sheet->getPageMargins()->setTop(0.3)->setBottom(0.3)->setLeft(0.4)->setRight(0.4);
+            // Landscape & fit
+            $sheet->getPageSetup()
+                ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
+                ->setFitToWidth(1)->setFitToHeight(0);
 
-                // Freeze header
-                $sheet->freezePane('A2');
+            // Margin
+            $sheet->getPageMargins()->setTop(0.3)->setBottom(0.3)->setLeft(0.4)->setRight(0.4);
 
-                // Lebarkan kolom gambar + autosize kolom lain
-                foreach (range('A', 'V') as $col) {
-                    $sheet->getColumnDimension($col)->setAutoSize(true);
-                }
-                // Lebar kolom W & X (gambar) – 50 ~ 55 biasanya pas untuk 220px
-                $sheet->getColumnDimension('W')->setWidth(52);
-                $sheet->getColumnDimension('X')->setWidth(52);
+            // Freeze header
+            $sheet->freezePane('A2');
 
-                // Border & alignment
-                $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
-                      ->getBorders()->getAllBorders()
-                      ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+            // Lebarkan kolom gambar + autosize kolom lain
+            foreach (range('A', 'V') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            $sheet->getColumnDimension('W')->setWidth(52); // file before
+            $sheet->getColumnDimension('X')->setWidth(52); // file after
 
-                $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
-                      ->getAlignment()->setWrapText(true)->setVertical('top')->setHorizontal('left');
+            // Border
+            $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
+                  ->getBorders()->getAllBorders()
+                  ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-                $sheet->getStyle("A1:{$highestColumn}1")->getAlignment()->setHorizontal('center');
+            // Alignment umum
+            $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
+                  ->getAlignment()
+                  ->setWrapText(true)
+                  ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP)
+                  ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
 
-                // ====== Sisipkan gambar + atur tinggi baris dinamis ======
-                $row = 2;
+            // Header: Ebrima 14pt bold + center
+            $sheet->getStyle("A1:{$highestColumn}1")->applyFromArray([
+                'font' => [
+                    'name' => 'Ebrima',
+                    'bold' => true,
+                    'size' => 22,
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+            ]);
 
-                foreach ($this->data as $item) {
-                    $finding = $item->finding;
-                    $maxImageHeightPx = 0;
+            // ====== Sisipkan gambar + atur tinggi baris dinamis ======
+            $row = 2;
 
-                    // BEFORE
-                    if ($item->file) {
-                        $pathBefore = storage_path('app/public/risk_files/' . basename($item->file));
-                        if (is_file($pathBefore) && @exif_imagetype($pathBefore)) {
-                            $fixedBefore = $this->normalizedImagePath($pathBefore); // perbaiki orientasi
-                            $h = $this->placeImage($sheet, $fixedBefore, 'W', $row, $this->imgMaxWidthPx);
-                            $maxImageHeightPx = max($maxImageHeightPx, $h);
-                        }
+            foreach ($this->data as $item) {
+                $finding = $item->finding;
+                $maxImageHeightPx = 0;
+
+                // BEFORE
+                if ($item->file) {
+                    $pathBefore = storage_path('app/public/risk_files/' . basename($item->file));
+                    if (is_file($pathBefore) && @exif_imagetype($pathBefore)) {
+                        $fixedBefore = $this->normalizedImagePath($pathBefore); // perbaiki orientasi
+                        $h = $this->placeImage($sheet, $fixedBefore, 'W', $row, $this->imgMaxWidthPx);
+                        $maxImageHeightPx = max($maxImageHeightPx, $h);
                     }
-
-                    // AFTER
-                    if ($finding && $finding->file) {
-                        $pathAfter = storage_path('app/public/sa_findings_file/' . basename($finding->file));
-                        if (is_file($pathAfter) && @exif_imagetype($pathAfter)) {
-                            $fixedAfter = $this->normalizedImagePath($pathAfter); // perbaiki orientasi
-                            $h = $this->placeImage($sheet, $fixedAfter, 'X', $row, $this->imgMaxWidthPx);
-                            $maxImageHeightPx = max($maxImageHeightPx, $h);
-                        }
-                    }
-
-                    // Konversi px -> point (approx 0.75 pt per px). Tambah padding.
-                    $rowHeightPt = max($this->rowMinHeightPt, (int)round($maxImageHeightPx * 0.75) + 20);
-                    $sheet->getRowDimension($row)->setRowHeight($rowHeightPt);
-
-                    $row++;
                 }
-            },
-        ];
-    }
+
+                // AFTER
+                if ($finding && $finding->file) {
+                    $pathAfter = storage_path('app/public/sa_findings_file/' . basename($finding->file));
+                    if (is_file($pathAfter) && @exif_imagetype($pathAfter)) {
+                        $fixedAfter = $this->normalizedImagePath($pathAfter);
+                        $h = $this->placeImage($sheet, $fixedAfter, 'X', $row, $this->imgMaxWidthPx);
+                        $maxImageHeightPx = max($maxImageHeightPx, $h);
+                    }
+                }
+
+                // px -> point (~0.75 pt per px) + padding
+                $rowHeightPt = max($this->rowMinHeightPt, (int)round($maxImageHeightPx * 0.75) + 20);
+                $sheet->getRowDimension($row)->setRowHeight($rowHeightPt);
+
+                $row++;
+            }
+        },
+    ];
+}
+
 
     /**
      * Tempel gambar pada cell (kolom/row) dengan lebar maksimum $maxWidthPx,
