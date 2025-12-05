@@ -21,6 +21,10 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
     protected $start_date;
     protected $end_date;
 
+    // Lebarin default kolom gambar & tinggi baris
+    private int $imgMaxWidthPx = 220;   // lebar gambar (px) di kolom W/X
+    private int $rowMinHeightPt = 150;  // tinggi baris minimal (points)
+
     protected $severityLabels = [
         1 => '1 - Insignificant',
         2 => '2 - Minor',
@@ -62,16 +66,11 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
 
     public function __construct($start_date, $end_date)
     {
-        $this->start_date = $start_date;
-        $this->end_date = $end_date;
-        // Mengambil data dan langsung mengurutkannya dari yang terbaru
-      $this->data = RiskAssessment::with(['shop', 'finding'])
-                        ->whereBetween('created_at', [
-                            Carbon::parse($this->start_date)->startOfDay(),
-                            Carbon::parse($this->end_date)->endOfDay()
-                        ])
-                        ->latest()
-                        ->get();
+        $this->data = RiskAssessment::with(['shop', 'finding'])
+            ->whereMonth('created_at', 11)
+            ->whereYear('created_at', Carbon::now()->year)
+            ->latest()
+            ->get();
     }
 
     public function collection()
@@ -82,34 +81,9 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
     public function headings(): array
     {
         return [
-            [
-                'NO',
-                'FINDING PROBLEM',
-                'POTENTIAL HAZARDS',
-                'COUNTERMEASURE',
-                'GENBA DATE',
-                'SHOP',
-                'RESPONSIBILITY',
-                null,
-                null,    
-                'PROGRESS',
-                null,
-                null          
-            ],
-            [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                'PIC Area',
-                'PIC Repair',
-                'Due Date',
-                'Status',
-                'Date',
-                'Checked by',
-            ]
+            'Assessment ID','Shop','Scope','Problem','Hazard','Accessor','Severity','Probability','Score','Risk Level',
+            'Reduction Measures','Follow-up Status','Created At','Countermeasure','Genba Date','PIC Area','PIC Repair',
+            'Due Date','Status','Progress Date','Checked','Code','File Before','File After',
         ];
     }
 
@@ -135,175 +109,183 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
 
     public function styles(Worksheet $sheet)
     {
-        return [
-            1 => ['font' => ['bold' => true]],
-        ];
+        return [1 => ['font' => ['bold' => true]]];
     }
 
     public function registerEvents(): array
+{
+    return [
+        AfterSheet::class => function (AfterSheet $event) {
+            $sheet   = $event->sheet->getDelegate();
+            $parent  = $sheet->getParent(); // workbook
+            $highestRow    = $sheet->getHighestRow();
+            $highestColumn = $sheet->getHighestColumn();
+
+            // === Default: Font Ebrima 12pt untuk seluruh workbook ===
+            $parent->getDefaultStyle()->getFont()
+                ->setName('Ebrima')
+                ->setSize(18);
+
+            // Landscape & fit
+            $sheet->getPageSetup()
+                ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE)
+                ->setFitToWidth(1)->setFitToHeight(0);
+
+            // Margin
+            $sheet->getPageMargins()->setTop(0.3)->setBottom(0.3)->setLeft(0.4)->setRight(0.4);
+
+            // Freeze header
+            $sheet->freezePane('A2');
+
+            // Lebarkan kolom gambar + autosize kolom lain
+            foreach (range('A', 'V') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            $sheet->getColumnDimension('W')->setWidth(52); // file before
+            $sheet->getColumnDimension('X')->setWidth(52); // file after
+
+            // Border
+            $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
+                  ->getBorders()->getAllBorders()
+                  ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+            // Alignment umum
+            $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
+                  ->getAlignment()
+                  ->setWrapText(true)
+                  ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP)
+                  ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+
+            // Header: Ebrima 14pt bold + center
+            $sheet->getStyle("A1:{$highestColumn}1")->applyFromArray([
+                'font' => [
+                    'name' => 'Ebrima',
+                    'bold' => true,
+                    'size' => 22,
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+            ]);
+
+            // ====== Sisipkan gambar + atur tinggi baris dinamis ======
+            $row = 2;
+
+            foreach ($this->data as $item) {
+                $finding = $item->finding;
+                $maxImageHeightPx = 0;
+
+                // BEFORE
+                if ($item->file) {
+                    $pathBefore = storage_path('app/public/risk_files/' . basename($item->file));
+                    if (is_file($pathBefore) && @exif_imagetype($pathBefore)) {
+                        $fixedBefore = $this->normalizedImagePath($pathBefore); // perbaiki orientasi
+                        $h = $this->placeImage($sheet, $fixedBefore, 'W', $row, $this->imgMaxWidthPx);
+                        $maxImageHeightPx = max($maxImageHeightPx, $h);
+                    }
+                }
+
+                // AFTER
+                if ($finding && $finding->file) {
+                    $pathAfter = storage_path('app/public/sa_findings_file/' . basename($finding->file));
+                    if (is_file($pathAfter) && @exif_imagetype($pathAfter)) {
+                        $fixedAfter = $this->normalizedImagePath($pathAfter);
+                        $h = $this->placeImage($sheet, $fixedAfter, 'X', $row, $this->imgMaxWidthPx);
+                        $maxImageHeightPx = max($maxImageHeightPx, $h);
+                    }
+                }
+
+                // px -> point (~0.75 pt per px) + padding
+                $rowHeightPt = max($this->rowMinHeightPt, (int)round($maxImageHeightPx * 0.75) + 20);
+                $sheet->getRowDimension($row)->setRowHeight($rowHeightPt);
+
+                $row++;
+            }
+        },
+    ];
+}
+
+
+    /**
+     * Tempel gambar pada cell (kolom/row) dengan lebar maksimum $maxWidthPx,
+     * menjaga aspek rasio. Return: tinggi gambar (px) sesudah resize.
+     */
+    private function placeImage(Worksheet $sheet, string $imgPath, string $column, int $row, int $maxWidthPx): int
     {
-        return [
-            AfterSheet::class => function (AfterSheet $event) {
-                $sheet = $event->sheet->getDelegate();
-                $highestRow = $sheet->getHighestRow();
-                $highestColumn = $sheet->getHighestColumn();
+        [$w, $h] = @getimagesize($imgPath) ?: [0, 0];
+        if ($w <= 0 || $h <= 0) return 0;
 
-                // Landscape & fit to page
-                $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
-                $sheet->getPageSetup()->setFitToWidth(1)->setFitToHeight(0);
+        // Skala proporsional ke max width
+        if ($w > $maxWidthPx) {
+            $scale = $maxWidthPx / $w;
+            $targetW = (int)round($w * $scale);
+            $targetH = (int)round($h * $scale);
+        } else {
+            $targetW = $w;
+            $targetH = $h;
+        }
 
-                // Margin
-                $sheet->getPageMargins()
-                    ->setTop(0.3)
-                    ->setBottom(0.3)
-                    ->setLeft(0.4)
-                    ->setRight(0.4);
+        $drawing = new Drawing();
+        $drawing->setName('Photo');
+        $drawing->setDescription('Photo');
+        $drawing->setPath($imgPath);
+        $drawing->setWidth($targetW);             // set lebar
+        // Tinggi akan mengikuti proporsi dari setWidth()
+        $drawing->setCoordinates($column . $row);
+        $drawing->setOffsetX(6);                  // padding kiri
+        $drawing->setOffsetY(6);                  // padding atas
+        $drawing->setWorksheet($sheet);
 
-                // Freeze header
-                $sheet->freezePane('B3');
+        return $targetH;
+    }
 
-                // set lebar kolom
-                $sheet->getColumnDimension('A')->setWidth(self::NUMBER_WIDTH);
-                $sheet->getColumnDimension('B')->setWidth(self::LARGE_WIDTH);
-                $sheet->getColumnDimension('C')->setWidth(self::LARGE_WIDTH);
-                $sheet->getColumnDimension('D')->setWidth(self::LARGE_WIDTH);
-                $sheet->getColumnDimension('E')->setWidth(self::MEDIUM_WIDTH);
-                $sheet->getColumnDimension('F')->setWidth(self::SMALL_WIDTH);
-                $sheet->getColumnDimension('G')->setWidth(self::SMALL_WIDTH);
-                $sheet->getColumnDimension('H')->setWidth(self::SMALL_WIDTH);
-                $sheet->getColumnDimension('I')->setWidth(self::SMALL_WIDTH);
-                $sheet->getColumnDimension('J')->setWidth(self::SMALL_WIDTH);
-                $sheet->getColumnDimension('K')->setWidth(self::SMALL_WIDTH);
-                $sheet->getColumnDimension('L')->setWidth(self::SMALL_WIDTH);
+    /**
+     * Perbaiki orientasi gambar berdasarkan EXIF Orientation (HP/Android/iPhone).
+     * Simpan hasil koreksi sementara di storage/app/temp_export/.
+     */
+    private function normalizedImagePath(string $path): string
+    {
+        // Jika ext tidak dikenal/EXIF tidak ada, pakai original
+        if (!function_exists('exif_read_data')) return $path;
 
-                // Row height
-                for ($i = 3; $i <= $highestRow; $i++) {
-                    $sheet->getRowDimension($i)->setRowHeight(85);
-                }
+        try {
+            $exif = @exif_read_data($path);
+            $orientation = $exif['Orientation'] ?? 1;
 
-                // Border & alignment
-                $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
-                    ->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+            if (!in_array($orientation, [3, 6, 8], true)) {
+                return $path; // sudah benar
+            }
 
-                $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
-                    ->getAlignment()->setWrapText(true)
-                    ->setVertical('top')
-                    ->setHorizontal('left');
+            // Load GD image
+            $img = @imagecreatefromstring(file_get_contents($path));
+            if (!$img) return $path;
 
-                $sheet->getStyle("A1:{$highestColumn}1")
-                    ->getAlignment()->setHorizontal('center');
+            switch ($orientation) {
+                case 3: $img = imagerotate($img, 180, 0); break;   // upside down
+                case 6: $img = imagerotate($img, -90, 0); break;   // 90 CW
+                case 8: $img = imagerotate($img, 90, 0); break;    // 90 CCW
+            }
 
-                $sheet->mergeCells('A1:A2');  
-                $sheet->mergeCells('B1:B2');  
-                $sheet->mergeCells('C1:C2');  
-                $sheet->mergeCells('D1:D2'); 
-                $sheet->mergeCells('E1:E2');
-                $sheet->mergeCells('F1:F2'); 
+            // Simpan ke file sementara (cache)
+            $tmpDir = storage_path('app/temp_export');
+            if (!is_dir($tmpDir)) @mkdir($tmpDir, 0775, true);
 
-                $sheet->mergeCells('G1:I1'); 
-                $sheet->mergeCells('J1:L1');
+            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            $tmp = $tmpDir . '/' . md5($path . filemtime($path)) . '.' . ($ext ?: 'jpg');
 
-                $sheet->getStyle('A1:L2')->getFont()->setBold(true);
-                $sheet->getStyle('A1:L2')->getAlignment()->setHorizontal('center');
-                $sheet->getStyle('A1:L2')->getAlignment()->setVertical('center');
+            // Simpan sesuai tipe
+            if (in_array($ext, ['png'], true)) {
+                imagepng($img, $tmp);
+            } else {
+                imagejpeg($img, $tmp, 90);
+            }
 
-
-                // Insert Images Landscape
-                $row = 3;
-
-                foreach ($this->data as $item) {
-                    $finding = $item->finding;
-
-                    // ================================
-                    // 1. FOTO BEFORE → Kolom B
-                    // ================================
-                    if ($item->file) {
-                        $pathBefore = storage_path('app/public/risk_files/' . basename($item->file));
-
-                        if (file_exists($pathBefore) && exif_imagetype($pathBefore)) {
-                            $drawing = new Drawing();
-                            $drawing->setName('Before');
-                            $drawing->setDescription('Foto Sebelum');
-                            $drawing->setPath($pathBefore);
-                            $drawing->setWidth(140);
-                            $drawing->setCoordinates('B' . $row);  
-                            $drawing->setOffsetX(10);
-                            $drawing->setOffsetY(50);
-                            $drawing->setWorksheet($sheet);
-                        }
-                    }
-
-                    // ================================
-                    // 2. RISK LEVEL → Kolom C
-                    // ================================
-                    $potential = $item->potential_hazards ?? 'N/A';
-                    $risk = $item->risk_level ?? 'N/A';
-
-                    $riskKey = strtolower($risk);
-                    $riskColor = $this->color_risk_level[$riskKey] ?? '000000';
-
-                    $richText = new RichText();
-
-                    $runPotential = $richText->createTextRun($potential);
-                    $runPotential->getFont()->setBold(false);
-                    $runPotential->getFont()->setSize(11);
-                    $runPotential->getFont()->setColor(new Color('000000')); // hitam
-
-                    $richText->createText("\n\n\n");
-
-                    $runRisk = $richText->createTextRun($risk);
-                    $runRisk->getFont()->setBold(true);
-                    $runRisk->getFont()->setSize(20);
-                    $runRisk->getFont()->setColor(new Color($riskColor)); // warna sesuai level
-
-                    $sheet->setCellValue("C{$row}", $richText);
-
-                    $sheet->getStyle("C{$row}")
-                        ->getAlignment()->setWrapText(true);
-                    $sheet->getStyle("C{$row}")
-                        ->getAlignment()->setHorizontal('center');
-
-                    // ================================
-                    // 3. FOTO AFTER → Kolom D
-                    // ================================
-                    if ($finding && $finding->file) {
-                        $pathAfter = storage_path('app/public/sa_findings_file/' . basename($finding->file));
-
-                        if (file_exists($pathAfter) && exif_imagetype($pathAfter)) {
-                            $drawing = new Drawing();
-                            $drawing->setName('After');
-                            $drawing->setDescription('Foto Sesudah');
-                            $drawing->setPath($pathAfter);
-                            $drawing->setWidth(140);
-                            $drawing->setCoordinates('D' . $row);   // TARUH DI BARIS YANG SAMA
-                            $drawing->setOffsetX(10);
-                            $drawing->setOffsetY(50);   
-                            $drawing->setWorksheet($sheet);
-                        }
-                    }
-
-                    // Status
-                    $status = $finding->status ?? 'Open';
-                    $richText = new RichText();
-                    $statusColor = 'EDBB31';
-
-                    $runStatus = $richText->createTextRun($status);
-                    $runStatus->getFont()->setBold(true);
-                    $runStatus->getFont()->setSize(20);
-                    $runStatus->getFont()->setColor(new Color($statusColor));
-
-                    $sheet->setCellValue("J{$row}", $richText);
-
-                    $sheet->getStyle("J{$row}")
-                        ->getAlignment()->setWrapText(true);
-                    $sheet->getStyle("J{$row}")
-                        ->getAlignment()->setHorizontal('center');
-
-                    $sheet->getRowDimension($row)->setRowHeight(180);
-
-                    $row++;
-                }
-            },
-        ];
+            imagedestroy($img);
+            return $tmp;
+        } catch (\Throwable $e) {
+            // Kalau gagal normalisasi, tetap pakai path asli
+            return $path;
+        }
     }
 }
