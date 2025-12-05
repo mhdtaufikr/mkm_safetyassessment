@@ -12,10 +12,14 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\RichText\RichText;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 
 class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithEvents
 {
     protected $data;
+    protected $start_date;
+    protected $end_date;
 
     // Lebarin default kolom gambar & tinggi baris
     private int $imgMaxWidthPx = 220;   // lebar gambar (px) di kolom W/X
@@ -45,7 +49,22 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
         5 => '5 - Environment',
     ];
 
-    public function __construct()
+    protected $number = 1;
+
+    protected $color_risk_level = [
+        'low'    => '00B050',
+        'medium' => 'EDBB31',
+        'high'   => 'ED7D31',
+        'extreme' => 'FF0000'
+    ];
+
+    const NUMBER_WIDTH = 4;
+    const SMALL_WIDTH = 12;
+    const MEDIUM_WIDTH = 18;
+    const LARGE_WIDTH = 40;
+
+
+    public function __construct($start_date, $end_date)
     {
         $this->data = RiskAssessment::with(['shop', 'finding'])
             ->whereMonth('created_at', 11)
@@ -73,30 +92,18 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
         $finding = $item->finding;
 
         return [
-            $item->id,
-            $item->shop->name ?? 'N/A',
-            $this->scopeLabels[$item->scope_number ?? 0] ?? $item->scope_number ?? 'N/A',
+            $this->number++,
             $item->finding_problem ?? 'N/A',
             $item->potential_hazards ?? 'N/A',
-            $item->accessor ?? 'N/A',
-            $this->severityLabels[$item->severity ?? 0] ?? $item->severity ?? 'N/A',
-            $this->possibilityLabels[$item->possibility ?? 0] ?? $item->possibility ?? 'N/A',
-            $item->score ?? 'N/A',
-            $item->risk_level ?? 'N/A',
-            $item->risk_reduction_proposal ?? 'N/A',
-            isset($item->is_followed_up) ? ($item->is_followed_up ? 'Close' : 'Open') : 'Open',
-            optional($item->created_at)->format('Y-m-d') ?? 'N/A',
             $finding?->countermeasure ?? 'N/A',
-            $finding?->genba_date ?? 'N/A',
+            optional($item->created_at)->format('d M Y') ?? 'N/A',
+            $item->shop->name ?? 'N/A',
             $finding?->pic_area ?? 'N/A',
             $finding?->pic_repair ?? 'N/A',
             $finding?->due_date ?? 'N/A',
             $finding?->status ?? 'Open',
             $finding?->progress_date ?? 'N/A',
             $finding?->checked ?? 'N/A',
-            $finding?->code ?? 'N/A',
-            $item->file ? 'Before' : '',
-            $finding?->file ? 'After' : '',
         ];
     }
 
