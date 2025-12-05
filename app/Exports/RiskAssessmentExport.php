@@ -11,6 +11,8 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\RichText\RichText;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 
 class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
 {
@@ -18,7 +20,22 @@ class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
     protected $highlightRows = [];
     protected $imageRows = [];
 
-    public function __construct()
+    protected $number = 1;
+
+    protected $color_risk_level = [
+        'low'    => '00B050',
+        'medium' => 'EDBB31',
+        'high'   => 'ED7D31',
+        'extreme' => 'FF0000'
+    ];
+
+    const NUMBER_WIDTH = 4;
+    const SMALL_WIDTH = 12;
+    const MEDIUM_WIDTH = 18;
+    const LARGE_WIDTH = 40;
+
+
+    public function __construct($start_date, $end_date)
     {
         // Mengambil data dalam seminggu terakhir dan mengurutkannya dari yang terbaru
         $this->audits = Saudit::where('created_at', '>=', Carbon::now()->subWeek())
@@ -162,7 +179,97 @@ class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
                         $sheet->getRowDimension($img['row'])->setRowHeight(85);
                     }
                 }
-            },
-        ];
+
+                // px -> point (~0.75 pt per px) + padding
+                $rowHeightPt = max($this->rowMinHeightPt, (int)round($maxImageHeightPx * 0.75) + 20);
+                $sheet->getRowDimension($row)->setRowHeight($rowHeightPt);
+
+                $row++;
+            }
+        },
+    ];
+}
+
+
+    /**
+     * Tempel gambar pada cell (kolom/row) dengan lebar maksimum $maxWidthPx,
+     * menjaga aspek rasio. Return: tinggi gambar (px) sesudah resize.
+     */
+    private function placeImage(Worksheet $sheet, string $imgPath, string $column, int $row, int $maxWidthPx): int
+    {
+        [$w, $h] = @getimagesize($imgPath) ?: [0, 0];
+        if ($w <= 0 || $h <= 0) return 0;
+
+        // Skala proporsional ke max width
+        if ($w > $maxWidthPx) {
+            $scale = $maxWidthPx / $w;
+            $targetW = (int)round($w * $scale);
+            $targetH = (int)round($h * $scale);
+        } else {
+            $targetW = $w;
+            $targetH = $h;
+        }
+
+        $drawing = new Drawing();
+        $drawing->setName('Photo');
+        $drawing->setDescription('Photo');
+        $drawing->setPath($imgPath);
+        $drawing->setWidth($targetW);             // set lebar
+        // Tinggi akan mengikuti proporsi dari setWidth()
+        $drawing->setCoordinates($column . $row);
+        $drawing->setOffsetX(6);                  // padding kiri
+        $drawing->setOffsetY(6);                  // padding atas
+        $drawing->setWorksheet($sheet);
+
+        return $targetH;
+    }
+
+    /**
+     * Perbaiki orientasi gambar berdasarkan EXIF Orientation (HP/Android/iPhone).
+     * Simpan hasil koreksi sementara di storage/app/temp_export/.
+     */
+    private function normalizedImagePath(string $path): string
+    {
+        // Jika ext tidak dikenal/EXIF tidak ada, pakai original
+        if (!function_exists('exif_read_data')) return $path;
+
+        try {
+            $exif = @exif_read_data($path);
+            $orientation = $exif['Orientation'] ?? 1;
+
+            if (!in_array($orientation, [3, 6, 8], true)) {
+                return $path; // sudah benar
+            }
+
+            // Load GD image
+            $img = @imagecreatefromstring(file_get_contents($path));
+            if (!$img) return $path;
+
+            switch ($orientation) {
+                case 3: $img = imagerotate($img, 180, 0); break;   // upside down
+                case 6: $img = imagerotate($img, -90, 0); break;   // 90 CW
+                case 8: $img = imagerotate($img, 90, 0); break;    // 90 CCW
+            }
+
+            // Simpan ke file sementara (cache)
+            $tmpDir = storage_path('app/temp_export');
+            if (!is_dir($tmpDir)) @mkdir($tmpDir, 0775, true);
+
+            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            $tmp = $tmpDir . '/' . md5($path . filemtime($path)) . '.' . ($ext ?: 'jpg');
+
+            // Simpan sesuai tipe
+            if (in_array($ext, ['png'], true)) {
+                imagepng($img, $tmp);
+            } else {
+                imagejpeg($img, $tmp, 90);
+            }
+
+            imagedestroy($img);
+            return $tmp;
+        } catch (\Throwable $e) {
+            // Kalau gagal normalisasi, tetap pakai path asli
+            return $path;
+        }
     }
 }

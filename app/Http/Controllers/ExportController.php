@@ -10,9 +10,14 @@ use PDF;
 
 class ExportController extends Controller
 {
-    public function exportExcel()
+    public function exportExcel(Request $request)
     {
-        return Excel::download(new RiskAssessmentExport, 'risk_assessments.xlsx');
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date'   => 'required|date|after_or_equal:start_date'
+        ]);
+        
+        return Excel::download(new RiskAssessmentExport($request->start_date, $request->end_date), 'risk_assessments.xlsx');
     }
 
     public function exportPDF()

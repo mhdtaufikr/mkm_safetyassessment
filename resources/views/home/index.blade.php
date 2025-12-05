@@ -117,41 +117,80 @@
             </div>
         </div>
     </div>
-            <div class="col-xl-6">
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white h-100">Recent Risk Assessments</div>
-                    <div class="card-body" id="recent-assessments">
-                        <div class="table-responsive">
-                            <table id='tableShop' class="table table-sm table-striped">
-                                <thead>
-                                    <tr>
-                                        <th class="card-header bg-primary text-white h-100">No.</th>
-                                        <th class="card-header bg-primary text-white h-100">Shop</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($recentAssessments as $index => $assessment)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $assessment->shop->name ?? 'Unknown Shop' }}</td>
-                                    </tr>
-                                    @empty
-                                    <tr><td colspan="2" class="text-center">No recent assessments found.</td></tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white h-100">Recent Risk Assessments</div>
+                <div class="card-body" id="recent-assessments">
+                    <div class="table-responsive">
+                        <table id='tableShop' class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="card-header bg-primary text-white h-100">No.</th>
+                                    <th class="card-header bg-primary text-white h-100">Shop</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($recentAssessments as $index => $assessment)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $assessment->shop->name ?? 'Unknown Shop' }}</td>
+                                </tr>
+                                @empty
+                                <tr><td colspan="2" class="text-center">No recent assessments found.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="mb-3 d-flex gap-2">
-    <form action="{{ route('export.excel') }}" method="GET" target="_blank" style="display: inline;">
-    <button type="submit" class="btn btn-success btn-sm">
+    <div class="mb-3 d-flex gap-2">
+
+    <button type="button" class="btn btn-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modal-add">
         <i class="bi bi-file-earmark-excel"></i> Export Excel
-        </button>
-    </form>
+    </button>
+                          
+    <!-- Modal -->
+    <div class="modal fade" id="modal-add" tabindex="-1" aria-labelledby="modal-add-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-add-label">Export Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form action="{{ route('export.excel') }}" method="GET" target="_blank">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="start_date">Tanggal Mulai<span class="text-danger">*</span></label>
+                            <input 
+                                type="date" 
+                                class="form-control" 
+                                id="start_date" 
+                                name="start_date" 
+                                required>
+                        </div>
+                        <br>
+                        <div class="form-group">
+                            <label for="end_date">Tanggal Selesai<span class="text-danger">*</span></label>
+                            <input 
+                                type="date" 
+                                class="form-control" 
+                                id="end_date" 
+                                name="end_date" 
+                                required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
         <!-- All Risk Table -->
@@ -331,4 +370,42 @@
         }
     }, 3000);
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#modal-add form');
+    const startDateInput = form.querySelector('#start_date');
+    const endDateInput = form.querySelector('#end_date');
+
+    form.addEventListener('submit', function(e) {
+        let startDate = startDateInput.value;
+        let endDate = endDateInput.value;
+        let valid = true;
+
+        // Reset pesan error
+        form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+        startDateInput.classList.remove('is-invalid');
+        endDateInput.classList.remove('is-invalid');
+
+        // Validasi end_date >= start_date
+        if (startDate && endDate && endDate < startDate) {
+            showError(endDateInput, 'Tanggal selesai tidak boleh kurang dari Tanggal Mulai');
+            valid = false;
+        }
+
+        if (!valid) {
+            e.preventDefault(); // cegah submit
+        }
+    });
+
+    function showError(input, message) {
+        input.classList.add('is-invalid');
+        const div = document.createElement('div');
+        div.className = 'invalid-feedback';
+        div.textContent = message;
+        input.parentNode.appendChild(div);
+    }
+});
+</script>
+
 @endsection

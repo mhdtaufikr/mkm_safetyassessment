@@ -19,12 +19,13 @@ class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
     protected $imageRows = [];
 
     public function __construct()
-    {
-        // Mengambil data dalam seminggu terakhir dan mengurutkannya dari yang terbaru
-        $this->audits = Saudit::where('created_at', '>=', Carbon::now()->subWeek())
-                            ->latest()
-                            ->get();
-    }
+{
+    $this->audits = Saudit::whereMonth('created_at', 11) // September = 9
+                          ->whereYear('created_at', Carbon::now()->year)
+                          ->latest()
+                          ->get();
+}
+
 
     public function array(): array
     {
