@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 
 class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithEvents
@@ -65,13 +66,13 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
         $this->start_date = $start_date;
         $this->end_date = $end_date;
         // Mengambil data dan langsung mengurutkannya dari yang terbaru
-      $this->data = RiskAssessment::with(['shop', 'finding'])
-                        ->whereBetween('created_at', [
-                            Carbon::parse($this->start_date)->startOfDay(),
-                            Carbon::parse($this->end_date)->endOfDay()
-                        ])
-                        ->latest()
-                        ->get();
+        $this->data = RiskAssessment::with(['shop', 'finding'])
+            ->whereBetween('created_at', [
+                Carbon::parse($this->start_date)->startOfDay(),
+                Carbon::parse($this->end_date)->endOfDay()
+            ])
+            ->latest()
+            ->get();
     }
 
     public function collection()
@@ -91,10 +92,10 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
                 'SHOP',
                 'RESPONSIBILITY',
                 null,
-                null,    
+                null,
                 'PROGRESS',
                 null,
-                null          
+                null
             ],
             [
                 null,
@@ -193,14 +194,14 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
                 $sheet->getStyle("A1:{$highestColumn}1")
                     ->getAlignment()->setHorizontal('center');
 
-                $sheet->mergeCells('A1:A2');  
-                $sheet->mergeCells('B1:B2');  
-                $sheet->mergeCells('C1:C2');  
-                $sheet->mergeCells('D1:D2'); 
+                $sheet->mergeCells('A1:A2');
+                $sheet->mergeCells('B1:B2');
+                $sheet->mergeCells('C1:C2');
+                $sheet->mergeCells('D1:D2');
                 $sheet->mergeCells('E1:E2');
-                $sheet->mergeCells('F1:F2'); 
+                $sheet->mergeCells('F1:F2');
 
-                $sheet->mergeCells('G1:I1'); 
+                $sheet->mergeCells('G1:I1');
                 $sheet->mergeCells('J1:L1');
 
                 $sheet->getStyle('A1:L2')->getFont()->setBold(true);
@@ -217,21 +218,33 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
                     // ================================
                     // 1. FOTO BEFORE → Kolom B
                     // ================================
-                    if ($item->file) {
-                        $pathBefore = storage_path('app/public/risk_files/' . basename($item->file));
+                    $richText = new RichText();
 
-                        if (file_exists($pathBefore) && exif_imagetype($pathBefore)) {
-                            $drawing = new Drawing();
-                            $drawing->setName('Before');
-                            $drawing->setDescription('Foto Sebelum');
-                            $drawing->setPath($pathBefore);
-                            $drawing->setWidth(140);
-                            $drawing->setCoordinates('B' . $row);  
-                            $drawing->setOffsetX(10);
-                            $drawing->setOffsetY(50);
-                            $drawing->setWorksheet($sheet);
-                        }
-                    }
+                    // --- KALIMAT ATAS ---
+                    $runFinding = $richText->createTextRun($item->finding_problem ?? 'N/A');
+                    $runFinding->getFont()->setBold(false);
+                    $runFinding->getFont()->setSize(11);
+                    $runFinding->getFont()->setColor(new Color('000000'));
+
+                    // --- SPACER UNTUK GAMBAR (AREA GAMBAR) ---
+                    // ini “reservasi ruang” tempat gambar akan duduk
+                    $richText->createText("\n\n\n\n\n\n\n\n\n\n\n");
+
+                    // --- KALIMAT BAWAH ---
+                    $runAccessor = $richText->createTextRun($item->accessor ?? 'N/A');
+                    $runAccessor->getFont()->setBold(true);
+                    $runAccessor->getFont()->setSize(10);
+                    $runAccessor->getFont()->setItalic(true);
+                    $runAccessor->getFont()->setColor(new Color('555555'));
+
+                    // set ke cell
+                    $sheet->setCellValue("B{$row}", $richText);
+
+                    // alignment
+                    $sheet->getStyle("B{$row}")
+                        ->getAlignment()
+                        ->setWrapText(true)
+                        ->setVertical(Alignment::VERTICAL_TOP);
 
                     // ================================
                     // 2. RISK LEVEL → Kolom C
@@ -263,6 +276,22 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
                     $sheet->getStyle("C{$row}")
                         ->getAlignment()->setHorizontal('center');
 
+                    if ($item->file) {
+                        $pathBefore = storage_path('app/public/risk_files/' . basename($item->file));
+
+                        if (file_exists($pathBefore) && exif_imagetype($pathBefore)) {
+                            $drawing = new Drawing();
+                            $drawing->setName('Before');
+                            $drawing->setDescription('Foto Sebelum');
+                            $drawing->setPath($pathBefore);
+                            $drawing->setWidth(140);
+                            $drawing->setCoordinates('B' . $row);
+                            $drawing->setOffsetX(10);
+                            $drawing->setOffsetY(50);
+                            $drawing->setWorksheet($sheet);
+                        }
+                    }
+
                     // ================================
                     // 3. FOTO AFTER → Kolom D
                     // ================================
@@ -277,7 +306,7 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
                             $drawing->setWidth(140);
                             $drawing->setCoordinates('D' . $row);   // TARUH DI BARIS YANG SAMA
                             $drawing->setOffsetX(10);
-                            $drawing->setOffsetY(50);   
+                            $drawing->setOffsetY(50);
                             $drawing->setWorksheet($sheet);
                         }
                     }
