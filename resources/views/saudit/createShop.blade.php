@@ -11,6 +11,13 @@
             font-style: italic;
             color: #6c757d; /* Bootstrap's secondary text color */
         }
+        /* Toast kecil di kanan bawah untuk info autosave (opsional) */
+        .autosave-toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 2000;
+        }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -34,7 +41,6 @@
              class="img-fluid rounded shadow" style="max-height: 270px;" alt="{{ $name }}">
     </div>
 @endif
-
 
 <div class="container my-4">
     <div class="row">
@@ -81,8 +87,12 @@
         @if(isset($audit)) @method('PUT') @endif
 
         <div class="card shadow-lg mb-4">
-            <div class="card-header bg-primary text-white fw-bold">
-                Audit Details
+            <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
+                <span>Audit Details</span>
+                {{-- Tombol clear draft lokal --}}
+                <button type="button" id="btn-clear-draft" class="btn btn-sm btn-outline-light">
+                    Clear Draft (Local)
+                </button>
             </div>
             <div class="card-body">
 
@@ -137,14 +147,19 @@
                             <div class="col-md-6 col-12"><strong>Check Item:</strong> {{ $item[0] }}</div>
                             <div class="col-md-6 col-12"><strong>Description:</strong> {{ $item[1] }}</div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label d-block"><strong>Score:</strong></label>
                             <div class="btn-group w-100" role="group" aria-label="Score selection">
                                 @for ($i = 1; $i <= 5; $i++)
-                                    <input type="radio" class="btn-check" name="items[{{ $itemCounter }}][score]" id="score-{{ $itemCounter }}-{{ $i }}" value="{{ $i }}"
-                                           data-id="{{ $itemCounter }}" data-category="{{ $key }}"
-                                           {{ (isset($audit->scores[$itemCounter]['score']) && $audit->scores[$itemCounter]['score'] == $i) ? 'checked' : '' }} autocomplete="off">
+                                    <input type="radio" class="btn-check"
+                                           name="items[{{ $itemCounter }}][score]"
+                                           id="score-{{ $itemCounter }}-{{ $i }}"
+                                           value="{{ $i }}"
+                                           data-id="{{ $itemCounter }}"
+                                           data-category="{{ $key }}"
+                                           {{ (isset($audit->scores[$itemCounter]['score']) && $audit->scores[$itemCounter]['score'] == $i) ? 'checked' : '' }}
+                                           autocomplete="off">
                                     <label class="btn btn-outline-primary" for="score-{{ $itemCounter }}-{{ $i }}">{{ $i }}</label>
                                 @endfor
                             </div>
@@ -152,18 +167,25 @@
 
                         <div class="mb-3">
                             <label class="form-label"><strong>Comment:</strong></label>
-                            <input type="text" name="items[{{ $itemCounter }}][comment]" class="form-control form-control-sm" value="{{ $audit->scores[$itemCounter]['comment'] ?? '' }}">
+                            <input type="text"
+                                   name="items[{{ $itemCounter }}][comment]"
+                                   class="form-control form-control-sm"
+                                   value="{{ $audit->scores[$itemCounter]['comment'] ?? '' }}">
                         </div>
-                        
-                        {{-- INPUT FILE PER ITEM DIKEMBALIKAN KE SINI --}}
+
+                        {{-- INPUT FILE PER ITEM --}}
                         <div class="mb-3">
                             <label class="form-label"><strong>File:</strong></label>
                             <div>
-                                <input type="file" name="items[{{ $itemCounter }}][file]" id="file-upload-{{ $itemCounter }}" class="d-none file-input-listener">
+                                <input type="file"
+                                       name="items[{{ $itemCounter }}][file]"
+                                       id="file-upload-{{ $itemCounter }}"
+                                       class="d-none file-input-listener">
                                 <label for="file-upload-{{ $itemCounter }}" class="btn btn-secondary btn-sm">
                                     <i class="bi bi-upload me-1"></i> Upload Picture
                                 </label>
-                                <span class="file-name-display ms-2">No file chosen</span>
+                                <span class="file-name-display ms-2"
+                                      data-file-key="items[{{ $itemCounter }}][file]">No file chosen</span>
                             </div>
                         </div>
 
@@ -173,14 +195,12 @@
                 </div>
                 @php $itemCounter++; @endphp
                 @endforeach
-                
-                {{-- Input file per kategori sudah dihapus dari sini --}}
 
             </div>
         </div>
         @endforeach
 
-                {{-- SCORE SECTION - EDITED FOR ALIGNMENT --}}
+                {{-- SCORE SECTION --}}
                 <div class="row mt-4 align-items-end">
                     <div class="col-md-4">
                         <label class="form-label">Final Score (%)</label>
@@ -206,6 +226,18 @@
 </div>
 </main>
 
+{{-- Toast kecil untuk notifikasi autosave --}}
+<div class="autosave-toast">
+    <div id="autosaveToast" class="toast align-items-center text-bg-secondary border-0" role="status" aria-live="polite" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                Draft tersimpan di perangkat.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" id="autosave-close"></button>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const categories = ['1S','2S','3S','4S','5S'];
@@ -222,8 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 subtotal += parseInt(radio.value);
             });
             totalScore += subtotal;
-            
-            // FIX: Check if the subtotal element exists before trying to update its text
+
             const subtotalElement = document.getElementById('subtotal-' + category);
             if (subtotalElement) {
                 subtotalElement.innerText = subtotal;
@@ -280,6 +311,145 @@ document.addEventListener('DOMContentLoaded', function () {
     calculateTotals();
 });
 </script>
+
+{{-- AUTOSAVE DRAFT (localStorage) --}}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const DRAFT_KEY = 'fiveS_audit_draft_v1';
+    const DRAFT_FILE_KEY = DRAFT_KEY + '_files';
+    const form = document.getElementById('auditForm');
+    const autosaveToastEl = document.getElementById('autosaveToast');
+    const bsToast = autosaveToastEl ? new bootstrap.Toast(autosaveToastEl, { delay: 1500 }) : null;
+
+    function showToast() {
+        if (bsToast) bsToast.show();
+    }
+
+    document.getElementById('autosave-close')?.addEventListener('click', () => {
+        if (bsToast) bsToast.hide();
+    });
+
+    // Restore draft
+    (function restoreDraft() {
+        if (!form) return;
+        try {
+            const raw = localStorage.getItem(DRAFT_KEY);
+            if (raw) {
+                const data = JSON.parse(raw);
+
+                // isi semua input text/textarea/hidden/select
+                for (const [name, value] of Object.entries(data)) {
+                    const elems = form.querySelectorAll(`[name="${name}"]`);
+
+                    if (!elems || elems.length === 0) continue;
+
+                    // Radio group
+                    if (elems[0].type === 'radio') {
+                        elems.forEach(r => {
+                            r.checked = (r.value == value);
+                        });
+                    } else if (elems[0].type === 'checkbox') {
+                        elems.forEach(c => {
+                            c.checked = !!value;
+                        });
+                    } else if (elems[0].type !== 'file') {
+                        elems.forEach(el => el.value = value);
+                    }
+                }
+            }
+
+            // restore nama file (bukan filenya)
+            const rawFiles = localStorage.getItem(DRAFT_FILE_KEY);
+            if (rawFiles) {
+                const dataFiles = JSON.parse(rawFiles);
+                Object.entries(dataFiles).forEach(([name, fileName]) => {
+                    const span = form.querySelector(`.file-name-display[data-file-key="${name}"]`);
+                    if (span && fileName) {
+                        span.textContent = fileName;
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('restore draft failed', e);
+        }
+    })();
+
+    // Autosave handler
+    let saveTimer;
+    function scheduleSave() {
+        if (!form) return;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+            try {
+                const toSave = {};
+                const toSaveFiles = {};
+
+                Array.from(form.elements).forEach(el => {
+                    if (!el.name) return;
+
+                    if (el.type === 'radio') {
+                        // radio: simpan value yang checked
+                        if (el.checked) {
+                            toSave[el.name] = el.value;
+                        } else if (!(el.name in toSave)) {
+                            // kalau belum ada apa2, inisialisasi kosong
+                            toSave[el.name] = '';
+                        }
+                    } else if (el.type === 'checkbox') {
+                        toSave[el.name] = el.checked;
+                    } else if (el.type === 'file') {
+                        // file: hanya simpan nama file ke map tersendiri
+                        const span = el.parentElement.querySelector('.file-name-display');
+                        const fileKey = el.name;
+                        if (span && span.textContent && span.textContent !== 'No file chosen') {
+                            toSaveFiles[fileKey] = span.textContent;
+                        }
+                    } else {
+                        toSave[el.name] = el.value;
+                    }
+                });
+
+                localStorage.setItem(DRAFT_KEY, JSON.stringify(toSave));
+                localStorage.setItem(DRAFT_FILE_KEY, JSON.stringify(toSaveFiles));
+                showToast();
+            } catch (e) {
+                console.warn('autosave draft failed', e);
+            }
+        }, 700);
+    }
+
+    if (form) {
+        form.addEventListener('input', scheduleSave);
+        form.addEventListener('change', scheduleSave);
+    }
+
+    // Clear draft button
+    document.getElementById('btn-clear-draft')?.addEventListener('click', function () {
+        if (!confirm('Hapus draft lokal? Data yang belum disubmit akan hilang.')) return;
+        try {
+            localStorage.removeItem(DRAFT_KEY);
+            localStorage.removeItem(DRAFT_FILE_KEY);
+            form?.reset();
+
+            // reset label file
+            document.querySelectorAll('.file-name-display').forEach(span => {
+                span.textContent = 'No file chosen';
+            });
+
+            // bisa juga reset skor dan total
+            if (typeof calculateTotals === 'function') {
+                calculateTotals();
+            }
+        } catch (e) {
+            console.warn('clear draft failed', e);
+        }
+    });
+
+    // Jika ingin clear draft setelah submit sukses, bisa lakukan di controller
+    // dengan flash session & blade JS seperti pola di form WBS.
+});
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   // Helpers
@@ -288,10 +458,8 @@ document.addEventListener('DOMContentLoaded', function () {
            document.querySelector('input[name="_token"]')?.value || '';
   }
   function setToken(newToken) {
-    // Update meta tag
     const meta = document.querySelector('meta[name="csrf-token"]');
     if (meta) meta.setAttribute('content', newToken);
-    // Update all hidden _token inputs (Blade @csrf fields)
     document.querySelectorAll('input[name="_token"]').forEach(i => i.value = newToken);
   }
 
@@ -309,7 +477,6 @@ document.addEventListener('DOMContentLoaded', function () {
   pingKeepAlive();
   setInterval(pingKeepAlive, 5 * 60 * 1000);
 
-  // Also ping immediately when user returns to the tab (after being idle/inactive)
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') pingKeepAlive();
   });
