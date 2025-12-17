@@ -95,171 +95,167 @@
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const container = document.getElementById('risk-assessment-container');
-    const addEntryBtn = document.getElementById('add-entry-btn');
-    const accessorInput = document.getElementById('main-accessor');
-    let index = 1;
+document.addEventListener('DOMContentLoaded', function () {
+  const container = document.getElementById('risk-assessment-container');
+  const addEntryBtn = document.getElementById('add-entry-btn');
+  const accessorInput = document.getElementById('main-accessor');
+  let index = 1;
 
-    function createEntry(i, preset = null) {
-      const div = document.createElement('div');
-      div.className = '';
-      div.innerHTML = `
-        <div class="card border-primary mb-4">
-          <div class="card-header bg-primary text-white fw-bold">
-            Form Entry ${i}
-            <button type="button" class="btn btn-danger btn-sm float-end remove-entry">Remove</button>
-          </div>
-          <div class="card-body">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Scope</label>
-                <select name="scope_number[]" class="form-select" required>
-                  <option value="">-- Select Scope --</option>
-                  <option value="1">1 - Man</option>
-                  <option value="2">2 - Machine</option>
-                  <option value="3">3 - Method</option>
-                  <option value="4">4 - Material</option>
-                  <option value="5">5 - Environment</option>
-                </select>
-              </div>
-              <div class="col-md-8">
-                <label class="form-label">Finding Problem</label>
-                <input name="finding_problem[]" type="text" class="form-control" required>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Potential Hazard</label>
-                <input name="potential_hazards[]" type="text" class="form-control" required>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Severity</label>
-                <select name="severity[]" class="severity form-select" required>
-                  <option value="">-- Select --</option>
-                  <option value="1">1 - Insignificant</option>
-                  <option value="2">2 - Minor</option>
-                  <option value="3">3 - Moderate</option>
-                  <option value="4">4 - Major</option>
-                  <option value="5">5 - Catastrophic</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Possibility</label>
-                <select name="possibility[]" class="possibility form-select" required>
-                  <option value="">-- Select --</option>
-                  <option value="1">1 - Very Rare</option>
-                  <option value="2">2 - Unlikely</option>
-                  <option value="3">3 - Occasional</option>
-                  <option value="4">4 - Frequent</option>
-                  <option value="5">5 - Always</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Score</label>
-                <input name="score[]" type="number" class="score form-control" readonly>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Risk Level</label>
-                <input name="risk_level[]" type="text" class="risk-level form-control" readonly>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Risk Reduction Measures Proposal</label>
-                <input name="risk_reduction_proposal[]" type="text" class="form-control" required>
-              </div>
-              <div class="col-12">
-                <label class="form-label">Attach File (optional)</label>
-                <input name="file[]" type="file" class="form-control file-input">
-              </div>
-            </div>
-            <input type="hidden" name="accessor[]" class="accessor-hidden">
-          </div>
+  // GLOBAL: createEntry
+  window.createEntry = function (i, preset = null) {
+    const div = document.createElement('div');
+    div.className = '';
+    div.innerHTML = `
+      <div class="card border-primary mb-4">
+        <div class="card-header bg-primary text-white fw-bold">
+          Form Entry ${i}
+          <button type="button" class="btn btn-danger btn-sm float-end remove-entry">Remove</button>
         </div>
-      `;
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Scope</label>
+              <select name="scope_number[]" class="form-select" required>
+                <option value="">-- Select Scope --</option>
+                <option value="1">1 - Man</option>
+                <option value="2">2 - Machine</option>
+                <option value="3">3 - Method</option>
+                <option value="4">4 - Material</option>
+                <option value="5">5 - Environment</option>
+              </select>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Finding Problem</label>
+              <input name="finding_problem[]" type="text" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Potential Hazard</label>
+              <input name="potential_hazards[]" type="text" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Severity</label>
+              <select name="severity[]" class="severity form-select" required>
+                <option value="">-- Select --</option>
+                <option value="1">1 - Insignificant</option>
+                <option value="2">2 - Minor</option>
+                <option value="3">3 - Moderate</option>
+                <option value="4">4 - Major</option>
+                <option value="5">5 - Catastrophic</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Possibility</label>
+              <select name="possibility[]" class="possibility form-select" required>
+                <option value="">-- Select --</option>
+                <option value="1">1 - Very Rare</option>
+                <option value="2">2 - Unlikely</option>
+                <option value="3">3 - Occasional</option>
+                <option value="4">4 - Frequent</option>
+                <option value="5">5 - Always</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Score</label>
+              <input name="score[]" type="number" class="score form-control" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Risk Level</label>
+              <input name="risk_level[]" type="text" class="risk-level form-control" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Risk Reduction Measures Proposal</label>
+              <input name="risk_reduction_proposal[]" type="text" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Attach File (optional)</label>
+              <input name="file[]" type="file" class="form-control file-input">
+            </div>
+          </div>
+          <input type="hidden" name="accessor[]" class="accessor-hidden">
+        </div>
+      </div>
+    `;
 
-      container.appendChild(div);
+    container.appendChild(div);
 
-      const sev = div.querySelector('.severity');
-      const prob = div.querySelector('.possibility');
-      const score = div.querySelector('.score');
-      const riskLevel = div.querySelector('.risk-level');
-      const hiddenAccessor = div.querySelector('.accessor-hidden');
+    const scopeSel = div.querySelector('select[name="scope_number[]"]');
+    const findingInp = div.querySelector('input[name="finding_problem[]"]');
+    const hazardInp = div.querySelector('input[name="potential_hazards[]"]');
+    const sev = div.querySelector('select[name="severity[]"]');
+    const prob = div.querySelector('select[name="possibility[]"]');
+    const score = div.querySelector('input[name="score[]"]');
+    const riskLevel = div.querySelector('input[name="risk_level[]"]');
+    const proposalInp = div.querySelector('input[name="risk_reduction_proposal[]"]');
+    const hiddenAccessor = div.querySelector('.accessor-hidden');
 
-      // Set accessor dari main accessor
-      hiddenAccessor.value = accessorInput.value || '';
+    hiddenAccessor.value = accessorInput.value || '';
 
-      function updateRisk() {
-        const s = parseInt(sev.value) || 0;
-        const p = parseInt(prob.value) || 0;
-        const result = s * p;
-        score.value = result;
+    function updateRisk() {
+      const s = parseInt(sev.value) || 0;
+      const p = parseInt(prob.value) || 0;
+      const result = s * p;
+      score.value = result;
 
-        if (result > 16) riskLevel.value = "Extreme";
-        else if (result >= 10) riskLevel.value = "High";
-        else if (result >= 5) riskLevel.value = "Medium";
-        else if (result > 0) riskLevel.value = "Low";
-        else riskLevel.value = "";
-      }
-
-      sev.addEventListener('input', updateRisk);
-      prob.addEventListener('input', updateRisk);
-
-      // Kalau dipanggil untuk restore draft, set nilai awal
-      if (preset) {
-        const selects = div.querySelectorAll('select');
-        const inputs = div.querySelectorAll('input[type="text"], input[type="number"]');
-
-        selects.forEach(sel => {
-          const name = sel.name;
-          if (preset[name] !== undefined) sel.value = preset[name];
-        });
-        inputs.forEach(inp => {
-          const name = inp.name;
-          if (name.endsWith('score[]') || name.endsWith('risk_level[]')) return; // dihitung ulang
-          if (preset[name] !== undefined) inp.value = preset[name];
-        });
-        // hitung ulang score & level setelah restore
-        updateRisk();
-      }
+      if (result > 16) riskLevel.value = 'Extreme';
+      else if (result >= 10) riskLevel.value = 'High';
+      else if (result >= 5) riskLevel.value = 'Medium';
+      else if (result > 0) riskLevel.value = 'Low';
+      else riskLevel.value = '';
     }
 
-    // Update semua accessor[] kalau main accessor berubah
-    accessorInput.addEventListener('input', function () {
-      const value = accessorInput.value;
-      document.querySelectorAll('input.accessor-hidden').forEach(input => {
-        input.value = value;
-      });
-    });
+    sev.addEventListener('input', updateRisk);
+    prob.addEventListener('input', updateRisk);
 
-    // Initial satu entry
-    createEntry(index++);
+    // apply preset dari draft
+    if (preset) {
+      if (preset.scope !== undefined) scopeSel.value = preset.scope;
+      if (preset.finding !== undefined) findingInp.value = preset.finding;
+      if (preset.hazard !== undefined) hazardInp.value = preset.hazard;
+      if (preset.severity !== undefined) sev.value = preset.severity;
+      if (preset.possibility !== undefined) prob.value = preset.possibility;
+      if (preset.proposal !== undefined) proposalInp.value = preset.proposal;
+      updateRisk();
+    }
+  };
 
-    addEntryBtn.addEventListener('click', function () {
-      createEntry(index++);
-    });
+  // initial satu entry
+  window.createEntry(index++);
 
-    // Prevent multiple submission
-    const form = document.getElementById('risk-form');
-    const submitBtn = document.getElementById('submit-btn');
-    form.addEventListener('submit', function () {
-      submitBtn.disabled = true;
-      submitBtn.innerText = 'Submitting…';
-    });
+  addEntryBtn.addEventListener('click', function () {
+    window.createEntry(index++);
+  });
 
-    // Delegasi remove entry
-    container.addEventListener('click', function (e) {
-      if (e.target && e.target.classList.contains('remove-entry')) {
-        e.preventDefault();
-        const card = e.target.closest('.card.border-primary');
-        if (card) card.remove();
-      }
+  // sinkron accessor ke hidden accessor[]
+  accessorInput.addEventListener('input', function () {
+    const value = accessorInput.value;
+    document.querySelectorAll('input.accessor-hidden').forEach(input => {
+      input.value = value;
     });
   });
+
+  // prevent double submit
+  const form = document.getElementById('risk-form');
+  const submitBtn = document.getElementById('submit-btn');
+  form.addEventListener('submit', function () {
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Submitting…';
+  });
+
+  // remove entry
+  container.addEventListener('click', function (e) {
+    if (e.target && e.target.classList.contains('remove-entry')) {
+      e.preventDefault();
+      const card = e.target.closest('.card.border-primary');
+      if (card) card.remove();
+    }
+  });
+});
 </script>
 
-{{-- Validasi & remove button helper (aslinya) --}}
+{{-- Validasi --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('risk-form');
-  const container = document.getElementById('risk-assessment-container');
 
   function fieldLabel(el) {
     const wrap = el.closest('.col-md-4, .col-md-6, .col-md-8, .col-12');
@@ -336,32 +332,28 @@ document.addEventListener('DOMContentLoaded', function () {
     if (bsToast) bsToast.hide();
   });
 
-  // Serialize semua entry ke objek sederhana
   function collectDraftData() {
     const data = {};
-    // header
     const mainAccessor = form.querySelector('#main-accessor');
-    data['accessor_main'] = mainAccessor ? mainAccessor.value : '';
+    data.accessor_main = mainAccessor ? mainAccessor.value : '';
 
-    // semua card entry
     const cards = container.querySelectorAll('.card.border-primary');
-    data['entries'] = [];
+    data.entries = [];
     cards.forEach(card => {
-      const entry = {};
-      entry['scope_number[]'] = card.querySelector('select[name="scope_number[]"]')?.value || '';
-      entry['finding_problem[]'] = card.querySelector('input[name="finding_problem[]"]')?.value || '';
-      entry['potential_hazards[]'] = card.querySelector('input[name="potential_hazards[]"]')?.value || '';
-      entry['severity[]'] = card.querySelector('select[name="severity[]"]')?.value || '';
-      entry['possibility[]'] = card.querySelector('select[name="possibility[]"]')?.value || '';
-      entry['risk_reduction_proposal[]'] = card.querySelector('input[name="risk_reduction_proposal[]"]')?.value || '';
-      // score & risk_level dihitung ulang, tidak perlu disimpan
-      data['entries'].push(entry);
+      const entry = {
+        scope: card.querySelector('select[name="scope_number[]"]')?.value || '',
+        finding: card.querySelector('input[name="finding_problem[]"]')?.value || '',
+        hazard: card.querySelector('input[name="potential_hazards[]"]')?.value || '',
+        severity: card.querySelector('select[name="severity[]"]')?.value || '',
+        possibility: card.querySelector('select[name="possibility[]"]')?.value || '',
+        proposal: card.querySelector('input[name="risk_reduction_proposal[]"]')?.value || '',
+      };
+      data.entries.push(entry);
     });
 
     return data;
   }
 
-  // Restore draft: perlu helper createEntry dari scope global (sudah didefinisikan di atas)
   function restoreDraft() {
     if (!form) return;
     try {
@@ -369,48 +361,32 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!raw) return;
       const data = JSON.parse(raw);
 
-      // main accessor
       if (data.accessor_main !== undefined) {
         const mainAcc = form.querySelector('#main-accessor');
         if (mainAcc) mainAcc.value = data.accessor_main;
       }
 
-      // hapus entry default, lalu recreate sesuai draft
       container.innerHTML = '';
       const entries = Array.isArray(data.entries) ? data.entries : [];
       let idx = 1;
-      entries.forEach(e => {
-        // panggil createEntry yang sudah ada di window
+      if (entries.length) {
+        entries.forEach(e => {
+          if (typeof window.createEntry === 'function') {
+            window.createEntry(idx++, e);
+          }
+        });
+      } else {
         if (typeof window.createEntry === 'function') {
-          window.createEntry(idx++, e);
-        } else {
-          // fallback: buat minimal 1 entry tanpa preset kalau helper belum tersedia
+          window.createEntry(1);
         }
-      });
-      // kalau tidak ada entry di draft, biarkan createEntry awal yang DOMContentLoaded buat
+      }
     } catch (e) {
       console.warn('restore draft failed', e);
     }
   }
 
-  // expose createEntry global supaya bisa dipakai di restoreDraft
-  (function exposeCreateEntry() {
-    if (!window.createEntryFromDraft && container) {
-      // cari fungsi createEntry di closure pertama (hack sederhana: override dari global)
-      // tapi di script atas createEntry ada dalam scope lokal,
-      // jadi kita definisikan versi global minimal untuk restore:
-    }
-  })();
+  setTimeout(restoreDraft, 200);
 
-  // Karena createEntry asli ada di script pertama dan tidak global,
-  // solusi praktis: panggil restoreDraft setelah sedikit delay,
-  // saat createEntry sudah ter-register di window (jika kamu refactor createEntry ke window).
-  // Versi ini mengasumsikan kamu memindahkan:
-  //   function createEntry(...) { ... }
-  // ke window.createEntry = function(...) { ... }
-  // di script pertama.
-
-  // Autosave (debounce)
   let saveTimer;
   function scheduleSave() {
     if (!form) return;
@@ -431,14 +407,12 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('change', scheduleSave);
   }
 
-  // Clear draft
   document.getElementById('btn-clear-draft')?.addEventListener('click', function () {
     if (!confirm('Hapus draft lokal? Data yang belum disubmit akan hilang.')) return;
     try {
       localStorage.removeItem(DRAFT_KEY);
       form?.reset();
       container.innerHTML = '';
-      // buat satu entry baru
       if (typeof window.createEntry === 'function') {
         window.createEntry(1);
       }
@@ -446,15 +420,11 @@ document.addEventListener('DOMContentLoaded', function () {
       console.warn('clear draft failed', e);
     }
   });
-
-  // opsional: panggil restore di sini kalau createEntry sudah global
-  // setTimeout(restoreDraft, 200);
 });
 </script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // Helpers
   function getToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content ||
            document.querySelector('input[name="_token"]')?.value || '';
