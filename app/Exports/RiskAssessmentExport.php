@@ -55,6 +55,14 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
         'extreme' => 'FF0000'
     ];
 
+    protected $riskLevelLabels = [
+        'low'      => 'Low',
+        'medium'   => 'Moderate',
+        'high'     => 'High',
+        'extreme'  => 'Extreme',
+    ];
+
+
     const NUMBER_WIDTH = 4;
     const SMALL_WIDTH = 12;
     const MEDIUM_WIDTH = 18;
@@ -253,6 +261,7 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
                     $risk = $item->risk_level ?? 'N/A';
 
                     $riskKey = strtolower($risk);
+                    $riskLabel = $this->riskLevelLabels[$riskKey] ?? $risk;
                     $riskColor = $this->color_risk_level[$riskKey] ?? '000000';
 
                     $richText = new RichText();
@@ -264,7 +273,7 @@ class RiskAssessmentExport implements FromCollection, WithHeadings, WithMapping,
 
                     $richText->createText("\n\n\n");
 
-                    $runRisk = $richText->createTextRun($risk);
+                    $runRisk = $richText->createTextRun($riskLabel);
                     $runRisk->getFont()->setBold(true);
                     $runRisk->getFont()->setSize(20);
                     $runRisk->getFont()->setColor(new Color($riskColor)); // warna sesuai level
