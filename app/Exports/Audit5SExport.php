@@ -15,16 +15,22 @@ use Carbon\Carbon;
 class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
 {
     protected $audits;
+    protected $startDate;
+    protected $endDate;
     protected $highlightRows = [];
     protected $imageRows = [];
 
-    public function __construct()
-{
-    $this->audits = Saudit::whereMonth('created_at', 11) // September = 9
-                          ->whereYear('created_at', Carbon::now()->year)
-                          ->latest()
-                          ->get();
-}
+    public function __construct($startDate, $endDate)
+    {
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+        $this->audits = Saudit::whereBetween('created_at', [
+            Carbon::parse($this->startDate)->startOfDay(),
+            Carbon::parse($this->endDate)->endOfDay()
+        ])
+            ->latest()
+            ->get();
+    }
 
 
     public function array(): array
@@ -50,11 +56,32 @@ class Audit5SExport implements FromArray, WithHeadings, WithStyles, WithEvents
             }
 
             $categoryMap = [
-                0 => 'Sort', 1 => 'Sort', 2 => 'Sort', 3 => 'Sort', 4 => 'Sort', 5 => 'Sort',
-                6 => 'Set In Order', 7 => 'Set In Order', 8 => 'Set In Order', 9 => 'Set In Order', 10 => 'Set In Order',
-                11 => 'Shine', 12 => 'Shine', 13 => 'Shine', 14 => 'Shine', 15 => 'Shine',
-                16 => 'Standardize', 17 => 'Standardize', 18 => 'Standardize', 19 => 'Standardize', 20 => 'Standardize',
-                21 => 'Sustain', 22 => 'Sustain', 23 => 'Sustain', 24 => 'Sustain', 25 => 'Sustain',
+                0 => 'Sort',
+                1 => 'Sort',
+                2 => 'Sort',
+                3 => 'Sort',
+                4 => 'Sort',
+                5 => 'Sort',
+                6 => 'Set In Order',
+                7 => 'Set In Order',
+                8 => 'Set In Order',
+                9 => 'Set In Order',
+                10 => 'Set In Order',
+                11 => 'Shine',
+                12 => 'Shine',
+                13 => 'Shine',
+                14 => 'Shine',
+                15 => 'Shine',
+                16 => 'Standardize',
+                17 => 'Standardize',
+                18 => 'Standardize',
+                19 => 'Standardize',
+                20 => 'Standardize',
+                21 => 'Sustain',
+                22 => 'Sustain',
+                23 => 'Sustain',
+                24 => 'Sustain',
+                25 => 'Sustain',
             ];
 
             // Pastikan 'scores' adalah array sebelum di-loop

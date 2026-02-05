@@ -11,69 +11,69 @@ use Illuminate\Support\Str;
 class SauditController extends Controller
 {
     public function index(Request $request)
-{
-    $query = Saudit::query();
+    {
+        $query = Saudit::query();
 
-    // Filter berdasarkan bulan dan tahun jika diisi
-    if ($request->filled('month') && $request->filled('year')) {
-        $query->whereMonth('date', $request->month)
-              ->whereYear('date', $request->year);
-    }
+        // Filter berdasarkan bulan dan tahun jika diisi
+        if ($request->filled('month') && $request->filled('year')) {
+            $query->whereMonth('date', $request->month)
+                ->whereYear('date', $request->year);
+        }
 
-    // Filter berdasarkan range tanggal jika ada
-    if ($request->filled('from') && $request->filled('to')) {
-        $query->whereBetween('date', [$request->from, $request->to]);
-    }
+        // Filter berdasarkan range tanggal jika ada
+        if ($request->filled('from') && $request->filled('to')) {
+            $query->whereBetween('date', [$request->from, $request->to]);
+        }
 
-    $audits = $query->orderBy('created_at', 'desc')->get();
+        $audits = $query->orderBy('created_at', 'desc')->get();
 
-    $actualScores = [0, 0, 0, 0, 0]; // Sort, Set in Order, Shine, Standardize, Sustain
-    $targetScores = [16, 16, 16, 16, 16];
+        $actualScores = [0, 0, 0, 0, 0]; // Sort, Set in Order, Shine, Standardize, Sustain
+        $targetScores = [16, 16, 16, 16, 16];
 
-    if ($audits->count() > 0) {
-        $scoresByCategory = [];
+        if ($audits->count() > 0) {
+            $scoresByCategory = [];
 
-        foreach ($audits as $audit) {
-            $scoreData = is_string($audit->scores) ? json_decode($audit->scores, true) : $audit->scores;
-            foreach ($scoreData as $data) {
-                $category = $data['category'] ?? null;
-                if ($category) {
-                    $scoresByCategory[$category][] = $data['score'];
+            foreach ($audits as $audit) {
+                $scoreData = is_string($audit->scores) ? json_decode($audit->scores, true) : $audit->scores;
+                foreach ($scoreData as $data) {
+                    $category = $data['category'] ?? null;
+                    if ($category) {
+                        $scoresByCategory[$category][] = $data['score'];
+                    }
                 }
             }
-        }
 
-        $categories = ['Sort', 'Set in Order', 'Shine', 'Standardize', 'Sustain'];
-        $averageScores = [];
+            $categories = ['Sort', 'Set in Order', 'Shine', 'Standardize', 'Sustain'];
+            $averageScores = [];
 
-        foreach ($categories as $i => $cat) {
-            if (!empty($scoresByCategory[$cat])) {
-                $totalScore = array_sum($scoresByCategory[$cat]);
-                $totalCount = count($scoresByCategory[$cat]);
-                $average = $totalCount > 0 ? round($totalScore / $totalCount, 2) : 0;
-                $averageScores[$cat] = $average;
-            } else {
-                $averageScores[$cat] = 0;
+            foreach ($categories as $i => $cat) {
+                if (!empty($scoresByCategory[$cat])) {
+                    $totalScore = array_sum($scoresByCategory[$cat]);
+                    $totalCount = count($scoresByCategory[$cat]);
+                    $average = $totalCount > 0 ? round($totalScore / $totalCount, 2) : 0;
+                    $averageScores[$cat] = $average;
+                } else {
+                    $averageScores[$cat] = 0;
+                }
+
+                $actualScores[$i] = $averageScores[$cat];
             }
-
-            $actualScores[$i] = $averageScores[$cat];
         }
+
+        return view('saudit.index', compact('audits', 'actualScores', 'targetScores'))
+            ->with('month', $request->month)
+            ->with('year', $request->year);
     }
-    
-    return view('saudit.index', compact('audits', 'actualScores', 'targetScores'))
-       ->with('month', $request->month)
-       ->with('year', $request->year);
-}
 
     private function mapIndexToCategory($index)
-{
-    if ($index >= 1 && $index <= 5) return 'Sort';
-    if ($index >= 6 && $index <= 10) return 'Set in Order';
-    if ($index >= 11 && $index <= 15) return 'Shine';
-    if ($index >= 16 && $index <= 20) return 'Standardize';
-    if ($index >= 21 && $index <= 25) return 'Sustain';
-    return null;
-}
+    {
+        if ($index >= 1 && $index <= 5) return 'Sort';
+        if ($index >= 6 && $index <= 10) return 'Set in Order';
+        if ($index >= 11 && $index <= 15) return 'Shine';
+        if ($index >= 16 && $index <= 20) return 'Standardize';
+        if ($index >= 21 && $index <= 25) return 'Sustain';
+        return null;
+    }
 
     public function create()
     {
@@ -81,7 +81,7 @@ class SauditController extends Controller
         return view('saudit.create', compact('shops'));
     }
 
-   public function store(Request $request)
+    public function store(Request $request)
     {
         // 1. Validasi input dari form
         $validated = $request->validate([
@@ -105,7 +105,7 @@ class SauditController extends Controller
         // Looping untuk setiap item pertanyaan dari form
         foreach ($validated['items'] as $index => $item) {
             $filePath = null;
-            
+
             // Logika ini sudah benar, hanya memproses file jika ada
             if ($request->hasFile("items.$index.file")) {
                 $uploadedFile = $request->file("items.$index.file");
@@ -257,30 +257,29 @@ class SauditController extends Controller
     }
 
     public function createShop($name)
-{
-    $decodedName = urldecode($name);
-    $shop = Shop::where('name', $decodedName)->first();
+    {
+        $decodedName = urldecode($name);
+        $shop = Shop::where('name', $decodedName)->first();
 
-    $shopImage = null;
-    $shopUpdatedAt = now(); // ✅ default jika shop tidak ditemukan
+        $shopImage = null;
+        $shopUpdatedAt = now(); // ✅ default jika shop tidak ditemukan
 
-    if ($shop) {
-        $filename = strtolower(str_replace(' ', '_', $shop->name)) . '.png';
-        $path = public_path('storage/shop_images/' . $filename);
+        if ($shop) {
+            $filename = strtolower(str_replace(' ', '_', $shop->name)) . '.png';
+            $path = public_path('storage/shop_images/' . $filename);
 
-        if (file_exists($path)) {
-            $shopImage = $filename;
+            if (file_exists($path)) {
+                $shopImage = $filename;
+            }
+
+            // ✅ update timestamp hanya jika ada
+            $shopUpdatedAt = $shop->updated_at ?? now();
         }
 
-        // ✅ update timestamp hanya jika ada
-        $shopUpdatedAt = $shop->updated_at ?? now();
+        return view('saudit.createShop', [
+            'name' => $decodedName,
+            'shopImage' => $shopImage,
+            'shopUpdatedAt' => $shopUpdatedAt, // ✅ pastikan dikirim ke view
+        ]);
     }
-
-    return view('saudit.createShop', [
-        'name' => $decodedName,
-        'shopImage' => $shopImage,
-        'shopUpdatedAt' => $shopUpdatedAt, // ✅ pastikan dikirim ke view
-    ]);
-}
-
 }
