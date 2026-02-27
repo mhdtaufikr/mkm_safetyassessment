@@ -4,7 +4,7 @@
     </IfModule>
 
     RewriteEngine On
-    RewriteBase /mkm_safetyassessment/
+    #RewriteBase /mkm_safetyassessment/
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

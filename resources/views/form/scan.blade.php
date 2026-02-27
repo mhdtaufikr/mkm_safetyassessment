@@ -35,14 +35,6 @@
               '0%':   { opacity: '0', transform: 'translateY(-20px)' },
               '100%': { opacity: '1', transform: 'translateY(0)' },
             },
-            pulse2: {
-              '0%, 100%': { opacity: '1' },
-              '50%':      { opacity: '0.6' },
-            },
-            shimmer: {
-              '0%':   { backgroundPosition: '-200% center' },
-              '100%': { backgroundPosition: '200% center' },
-            },
             float: {
               '0%, 100%': { transform: 'translateY(0px)' },
               '50%':      { transform: 'translateY(-8px)' },
@@ -51,23 +43,27 @@
               '0%':   { opacity: '0', transform: 'scale(0.9)' },
               '100%': { opacity: '1', transform: 'scale(1)' },
             },
+            shimmer: {
+              '0%':   { backgroundPosition: '-200% center' },
+              '100%': { backgroundPosition: '200% center' },
+            },
           },
           animation: {
-            'fade-up':    'fadeUp 0.7s ease both',
-            'fade-up-2':  'fadeUp 0.7s 0.15s ease both',
-            'fade-up-3':  'fadeUp 0.7s 0.3s ease both',
-            'fade-up-4':  'fadeUp 0.7s 0.45s ease both',
-            'fade-down':  'fadeDown 0.6s ease both',
-            'float':      'float 3.5s ease-in-out infinite',
-            'scale-in':   'scaleIn 0.5s 0.2s ease both',
-            'shimmer':    'shimmer 2.5s linear infinite',
+            'fade-up':   'fadeUp 0.7s ease both',
+            'fade-up-2': 'fadeUp 0.7s 0.15s ease both',
+            'fade-up-3': 'fadeUp 0.7s 0.3s ease both',
+            'fade-up-4': 'fadeUp 0.7s 0.45s ease both',
+            'fade-down': 'fadeDown 0.6s ease both',
+            'float':     'float 3.5s ease-in-out infinite',
+            'scale-in':  'scaleIn 0.5s 0.2s ease both',
+            'shimmer':   'shimmer 2.5s linear infinite',
           }
         }
       }
     }
   </script>
   <style>
-    /* ══ Background image + overlay ══ */
+    /* ══ Background ══ */
     body {
       background-image: url("{{ asset('assets/img/About-Company-BG-2.jpg') }}");
       background-size: cover;
@@ -75,42 +71,27 @@
       background-repeat: no-repeat;
       background-attachment: fixed;
     }
-
-    /* ══ Dark overlay on bg ══ */
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
-      background: linear-gradient(
-        160deg,
-        rgba(0,20,28,0.72) 0%,
-        rgba(0,75,93,0.55) 50%,
-        rgba(0,30,40,0.78) 100%
-      );
-      z-index: 0;
-      pointer-events: none;
+      position: fixed; inset: 0;
+      background: linear-gradient(160deg, rgba(0,20,28,0.72) 0%, rgba(0,75,93,0.55) 50%, rgba(0,30,40,0.78) 100%);
+      z-index: 0; pointer-events: none;
     }
-
-    /* ══ Dot grid texture over overlay ══ */
     body::after {
       content: '';
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
       background-size: 28px 28px;
-      z-index: 0;
-      pointer-events: none;
+      z-index: 0; pointer-events: none;
     }
 
-    /* ══ Glass card ══ */
+    /* ══ Glass ══ */
     .glass {
       background: rgba(255,255,255,0.10);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255,255,255,0.18);
     }
-
-    /* ══ Menu card white ══ */
     .menu-glass {
       background: rgba(255,255,255,0.92);
       backdrop-filter: blur(16px);
@@ -118,28 +99,15 @@
       border: 1px solid rgba(255,255,255,0.9);
     }
 
-    /* ══ Shimmer button effect ══ */
-    .btn-shimmer {
-      background-size: 200% auto;
-      transition: background-position 0.4s ease, box-shadow 0.3s, transform 0.2s;
-    }
-    .btn-shimmer:hover {
-      background-position: right center;
-      transform: translateY(-2px);
-    }
-    .btn-shimmer:active {
-      transform: translateY(0px);
-    }
-
-    /* ══ Divider gradient ══ */
+    /* ══ Divider ══ */
     .divider-mkm {
       height: 2px;
       background: linear-gradient(90deg, transparent, rgba(0,103,127,0.5) 30%, rgba(0,103,127,0.8) 50%, rgba(0,103,127,0.5) 70%, transparent);
       border-radius: 2px;
-      margin: 1.5rem 0;
+      margin: 1.25rem 0;
     }
 
-    /* ══ Animated border glow on card hover ══ */
+    /* ══ Menu button card ══ */
     .menu-btn-card {
       position: relative;
       overflow: hidden;
@@ -147,10 +115,8 @@
     }
     .menu-btn-card::after {
       content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      opacity: 0;
+      position: absolute; inset: 0;
+      border-radius: inherit; opacity: 0;
       background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
       transition: opacity 0.3s;
     }
@@ -160,7 +126,24 @@
       box-shadow: 0 12px 32px rgba(0,103,127,0.35);
     }
 
-    /* ══ Scroll custom ══ */
+    /* ══ Success banner pulse border ══ */
+    @keyframes borderPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(5,150,105,0.4); }
+      50%       { box-shadow: 0 0 0 6px rgba(5,150,105,0); }
+    }
+    .success-banner { animation: borderPulse 2s ease-in-out 3; }
+
+    /* ══ Error banner ══ */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-6px); }
+      40%       { transform: translateX(6px); }
+      60%       { transform: translateX(-4px); }
+      80%       { transform: translateX(4px); }
+    }
+    .error-banner { animation: shake 0.5s ease; }
+
+    /* ══ Scrollbar ══ */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(0,103,127,0.4); border-radius: 3px; }
@@ -169,34 +152,23 @@
 
 <body class="min-h-screen flex flex-col justify-between relative">
 
-  <!-- ══════════════════════════════════
-       TOP — Logo + Company bar
-  ══════════════════════════════════ -->
+  <!-- ══ TOP — Logo bar ══ -->
   <div class="relative z-10 pt-8 pb-4 flex flex-col items-center gap-4 animate-fade-down">
-
-    <!-- Logo card -->
     <div class="glass rounded-2xl px-6 py-4 shadow-2xl animate-float">
       <img src="{{ asset('assets/img/Logo Option 3 (1).png') }}"
            alt="PT MKM Logo"
            class="h-16 w-auto object-contain drop-shadow-md">
     </div>
-
-    <!-- Company name pill -->
     <div class="glass rounded-full px-5 py-2 flex items-center gap-2 shadow-lg">
       <span class="w-2 h-2 rounded-full bg-white/60 animate-pulse"></span>
       <span class="text-white/90 text-xs font-semibold tracking-widest uppercase">
         PT. Mitsubishi Krama Yudha Motors &amp; Manufacturing
       </span>
     </div>
-
   </div>
 
-
-  <!-- ══════════════════════════════════
-       CENTER — Main Menu Card
-  ══════════════════════════════════ -->
+  <!-- ══ CENTER — Main Card ══ -->
   <div class="relative z-10 flex-1 flex items-center justify-center px-4 py-6">
-
     <div class="menu-glass rounded-3xl shadow-2xl w-full max-w-md p-7 animate-scale-in">
 
       <!-- Portal Title -->
@@ -226,9 +198,7 @@
                   d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
           </svg>
-          <span class="text-xs font-bold uppercase tracking-wide" style="color:rgba(0,103,127,1);">
-            Location:
-          </span>
+          <span class="text-xs font-bold uppercase tracking-wide" style="color:rgba(0,103,127,1);">Location:</span>
           <span class="text-sm font-black" style="color:rgba(0,50,62,1);">{{ $locationDisplay }}</span>
         </div>
       </div>
@@ -240,27 +210,89 @@
         Please select one of the assessment menus below to get started.
       </p>
 
-      <!-- Success Alert -->
+      {{-- ══ SUCCESS BANNER — Tidak auto-dismiss, harus close manual ══ --}}
       @if(session('success'))
-      <div id="success-alert"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl mb-4 animate-fade-up-2"
-           style="background:rgba(0,103,127,0.08); border:1px solid rgba(0,103,127,0.25);">
-        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-             style="color:rgba(0,103,127,1);">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <span class="text-sm font-semibold flex-1" style="color:rgba(0,75,93,1);">{{ session('success') }}</span>
-        <button onclick="document.getElementById('success-alert').remove()"
-                class="text-lg leading-none font-bold"
-                style="color:rgba(0,103,127,0.4);">&times;</button>
+      <div id="alert-success"
+           class="success-banner mb-5 rounded-2xl overflow-hidden shadow-lg animate-fade-up"
+           style="border: 2px solid #059669;">
+
+        {{-- Header strip --}}
+        <div class="flex items-center gap-3 px-4 py-3"
+             style="background: linear-gradient(135deg, #064e3b, #059669);">
+          <div class="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center"
+               style="background:rgba(255,255,255,0.2);">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                    d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span class="text-white font-black text-sm flex-1 tracking-wide">Submission Successful!</span>
+          <button onclick="document.getElementById('alert-success').remove()"
+                  title="Close"
+                  class="text-white/70 hover:text-white text-2xl leading-none font-bold transition-colors">
+            &times;
+          </button>
+        </div>
+
+        {{-- Body --}}
+        <div class="px-4 py-3" style="background:rgba(5,150,105,0.06);">
+          <p class="text-sm font-semibold" style="color:#065f46;">
+            {{ session('success') }}
+          </p>
+          <p class="text-xs text-slate-500 mt-1">
+            Data telah tersimpan. Klik <strong>&times;</strong> untuk menutup notifikasi ini.
+          </p>
+        </div>
       </div>
       @endif
 
-      <!-- ── Menu Buttons ── -->
+      {{-- ══ ERROR BANNER — Tidak auto-dismiss ══ --}}
+      @if(session('error') || $errors->any())
+      <div id="alert-error"
+           class="error-banner mb-5 rounded-2xl overflow-hidden shadow-lg animate-fade-up"
+           style="border: 2px solid #dc2626;">
+
+        {{-- Header strip --}}
+        <div class="flex items-center gap-3 px-4 py-3"
+             style="background: linear-gradient(135deg, #7f1d1d, #dc2626);">
+          <div class="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center"
+               style="background:rgba(255,255,255,0.2);">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+          </div>
+          <span class="text-white font-black text-sm flex-1 tracking-wide">Submission Failed</span>
+          <button onclick="document.getElementById('alert-error').remove()"
+                  title="Close"
+                  class="text-white/70 hover:text-white text-2xl leading-none font-bold transition-colors">
+            &times;
+          </button>
+        </div>
+
+        {{-- Body --}}
+        <div class="px-4 py-3" style="background:rgba(220,38,38,0.05);">
+          @if(session('error'))
+          <p class="text-sm font-semibold text-red-700">{{ session('error') }}</p>
+          @endif
+          @if($errors->any())
+          <ul class="text-xs text-red-600 space-y-1 mt-1 list-disc list-inside">
+            @foreach($errors->all() as $err)
+              <li>{{ $err }}</li>
+            @endforeach
+          </ul>
+          @endif
+          <p class="text-xs text-slate-500 mt-2">
+            Silakan kembali ke form dan periksa kembali data yang diisi.
+          </p>
+        </div>
+      </div>
+      @endif
+
+      <!-- ══ Menu Buttons ══ -->
       <div class="flex flex-col gap-3 animate-fade-up-3">
 
-        <!-- Safety Assessment -->
+        <!-- Safety / Risk Assessment -->
         <a href="{{ url('form/'.$locationForUrl) }}"
            class="menu-btn-card group flex items-center gap-4 px-5 py-4 rounded-2xl text-white font-bold shadow-lg"
            style="background:linear-gradient(135deg, rgba(0,50,62,1) 0%, rgba(0,103,127,1) 60%, rgba(0,140,170,1) 100%);">
@@ -272,7 +304,7 @@
             </svg>
           </div>
           <div class="flex-1 text-left">
-            <p class="text-base font-black leading-tight">Safety Assessment</p>
+            <p class="text-base font-black leading-tight">Risk Assessment</p>
             <p class="text-white/65 text-xs font-medium mt-0.5">Risk identification &amp; hazard evaluation</p>
           </div>
           <svg class="w-5 h-5 text-white/60 group-hover:translate-x-1 transition-transform shrink-0"
@@ -306,17 +338,14 @@
       </div>
 
       <!-- Footer note -->
-      <p class="text-center text-xs text-slate-400 mt-5 animate-fade-up-4">
+      <p class="text-center text-xs text-slate-400 mt-6 animate-fade-up-4">
         &copy; {{ date('Y') }} PT. Mitsubishi Krama Yudha Motors &amp; Manufacturing
       </p>
 
     </div>
   </div>
 
-
-  <!-- ══════════════════════════════════
-       BOTTOM — Version / status bar
-  ══════════════════════════════════ -->
+  <!-- ══ BOTTOM — Status bar ══ -->
   <div class="relative z-10 pb-5 flex justify-center animate-fade-up-4">
     <div class="glass rounded-full px-5 py-2 flex items-center gap-3 shadow-lg">
       <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50"></span>
@@ -325,22 +354,6 @@
       <span class="text-white/50 text-xs">{{ date('d M Y') }}</span>
     </div>
   </div>
-
-
-  <!-- ══ Auto-dismiss success alert after 3s ══ -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const alert = document.getElementById('success-alert');
-      if (alert) {
-        setTimeout(() => {
-          alert.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-          alert.style.opacity = '0';
-          alert.style.transform = 'translateY(-8px)';
-          setTimeout(() => alert.remove(), 500);
-        }, 3000);
-      }
-    });
-  </script>
 
 </body>
 </html>
