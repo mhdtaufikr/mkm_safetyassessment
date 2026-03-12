@@ -318,9 +318,8 @@
         </div>
       </div>
 
-      <!-- Action Bar -->
+      <!-- Action Bar (ATAS) -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
-
         <!-- Add Entry -->
         <button type="button"
                 id="add-entry-btn"
@@ -334,10 +333,9 @@
           Add Entry
         </button>
 
-        {{-- ✅ Submit Button — warna hijau emerald, berbeda dari MKM teal --}}
+        {{-- Submit Button ATAS --}}
         <button type="submit"
-                id="submit-btn"
-                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-black text-sm px-8 py-3 rounded-xl shadow-lg transition-all"
+                class="submit-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-black text-sm px-8 py-3 rounded-xl shadow-lg transition-all"
                 style="background: linear-gradient(135deg, #065f46 0%, #059669 100%); letter-spacing:0.03em;"
                 onmouseover="this.style.background='linear-gradient(135deg,#064e3b 0%,#047857 100%)'"
                 onmouseout="this.style.background='linear-gradient(135deg,#065f46 0%,#059669 100%)'">
@@ -351,6 +349,22 @@
       <!-- Entry Container -->
       <div id="risk-assessment-container"></div>
 
+      <!-- Action Bar (BAWAH) -->
+      <div class="flex flex-col sm:flex-row items-center justify-end gap-3 mt-4">
+        {{-- Submit Button BAWAH (utama untuk state JS) --}}
+        <button type="submit"
+                id="submit-btn"
+                class="submit-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 text-white font-black text-sm px-8 py-3 rounded-xl shadow-lg transition-all"
+                style="background: linear-gradient(135deg, #065f46 0%, #059669 100%); letter-spacing:0.03em;"
+                onmouseover="this.style.background='linear-gradient(135deg,#064e3b 0%,#047857 100%)'"
+                onmouseout="this.style.background='linear-gradient(135deg,#065f46 0%,#059669 100%)'">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+          Submit Assessment
+        </button>
+      </div>
+
     </form>
   </div>
 
@@ -363,7 +377,8 @@
     const form          = document.getElementById('risk-form');
     const overlay       = document.getElementById('submit-overlay');
     const warningBar    = document.getElementById('submit-warning-bar');
-    const submitBtn     = document.getElementById('submit-btn');
+    const bottomSubmit  = document.getElementById('submit-btn');
+    const submitButtons = document.querySelectorAll('button.submit-btn');
     let   entryIndex    = 1;
     let   isSubmitting  = false;
 
@@ -378,11 +393,11 @@
 
     // ─── Check apakah entry benar-benar kosong semua ─────
     function isEntryCompletelyEmpty(card) {
-      const scope    = card.querySelector('select[name="scope_number[]"]')?.value       || '';
-      const finding  = card.querySelector('input[name="finding_problem[]"]')?.value     || '';
-      const hazard   = card.querySelector('input[name="potential_hazards[]"]')?.value   || '';
-      const severity = card.querySelector('select[name="severity[]"]')?.value           || '';
-      const prob     = card.querySelector('select[name="possibility[]"]')?.value        || '';
+      const scope    = card.querySelector('select[name="scope_number[]"]')?.value        || '';
+      const finding  = card.querySelector('input[name="finding_problem[]"]')?.value      || '';
+      const hazard   = card.querySelector('input[name="potential_hazards[]"]')?.value    || '';
+      const severity = card.querySelector('select[name="severity[]"]')?.value            || '';
+      const prob     = card.querySelector('select[name="possibility[]"]')?.value         || '';
       const proposal = card.querySelector('input[name="risk_reduction_proposal[]"]')?.value || '';
       return !scope && !finding && !hazard && !severity && !prob && !proposal;
     }
@@ -571,7 +586,7 @@
         div.remove();
       });
 
-      // Restore preset values
+      // Restore preset values (jika ada)
       if (preset) {
         const scopeSel   = div.querySelector('select[name="scope_number[]"]');
         const findingInp = div.querySelector('input[name="finding_problem[]"]');
@@ -617,20 +632,16 @@
     }
 
     // ─── Validate all fields in an entry card ────────────
-    // Returns true if valid, false if invalid
-    // SKIP validation if entry is completely empty
     function validateEntryCard(card) {
       if (isEntryCompletelyEmpty(card)) {
-        // Entry kosong semua — hapus required highlight, skip
         card.querySelectorAll('.entry-required').forEach(el => {
           el.classList.remove('field-invalid');
           const fb = el.nextElementSibling;
           if (fb && fb.classList.contains('invalid-feedback')) fb.textContent = '';
         });
-        return true; // anggap valid (akan diabaikan saat submit)
+        return true;
       }
 
-      // Ada isi — validasi semua field required
       let cardValid = true;
       card.querySelectorAll('.entry-required').forEach(el => {
         if (!validateField(el)) cardValid = false;
@@ -652,7 +663,7 @@
 
     // ─── beforeunload: HANYA intercept kalau BUKAN submit ─
     window.addEventListener('beforeunload', function (e) {
-      if (isSubmitting) return; // submit sedang jalan → biarkan redirect, jangan intercept
+      if (isSubmitting) return;
     });
 
     // ─── Submit handler ───────────────────────────────────
@@ -690,13 +701,27 @@
         return;
       }
 
-      // ✅ Semua valid — aktifkan overlay
+      // ✅ Semua valid — aktifkan overlay dan disable semua submit button
       isSubmitting = true;
       overlay.classList.add('active');
       warningBar.classList.add('active');
-      submitBtn.disabled      = true;
-      submitBtn.style.opacity = '0.6';
-      submitBtn.style.cursor  = 'not-allowed';
+
+      submitButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.cursor  = 'not-allowed';
+      });
+
+      // (opsional) ubah teks di tombol bawah saja
+      if (bottomSubmit) {
+        bottomSubmit.innerHTML = `
+          <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="4" class="text-emerald-700" stroke="currentColor" stroke-opacity="0.25"></circle>
+            <path d="M4 12a8 8 0 018-8" stroke-width="4" class="text-white" stroke-linecap="round"></path>
+          </svg>
+          Submitting...
+        `;
+      }
     });
 
     // ─── Initial entry ────────────────────────────────────
