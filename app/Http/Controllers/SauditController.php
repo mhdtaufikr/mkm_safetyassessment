@@ -178,7 +178,7 @@ class SauditController extends Controller
             'auditor' => 'required|string|max:255',
             'items' => 'required|array',
             'comments' => 'nullable|string',
-            'items.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xlsx,xls|max:5120',
+            'items.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xlsx,xls',
         ]);
 
         $audit = Saudit::findOrFail($id);
