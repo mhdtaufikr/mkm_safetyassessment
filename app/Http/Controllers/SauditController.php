@@ -173,9 +173,9 @@ class SauditController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'shop' => 'required|string|max:255',
+            'shop' => 'required|string',
             'date' => 'required|date',
-            'auditor' => 'required|string|max:255',
+            'auditor' => 'required|string',
             'items' => 'required|array',
             'comments' => 'nullable|string',
             'items.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xlsx,xls',
