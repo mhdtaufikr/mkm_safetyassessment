@@ -172,14 +172,8 @@ class SauditController extends Controller
 
     public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'shop' => 'required|string',
-            'date' => 'required|date',
-            'auditor' => 'required|string',
-            'items' => 'required|array',
-            'comments' => 'nullable|string',
-            'items.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xlsx,xls',
-        ]);
+        // Get all input data (no validation)
+        $validated = $request->all();
 
         $audit = Saudit::findOrFail($id);
         $existingScores = $audit->scores ?? [];
@@ -237,6 +231,7 @@ class SauditController extends Controller
 
         return redirect()->route('saudit.index')->with('success', '5S audit berhasil diperbarui.');
     }
+
 
     public function show($id)
     {
