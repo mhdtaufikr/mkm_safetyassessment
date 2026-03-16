@@ -556,7 +556,8 @@
 
                 <div>
                   <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-400">Evidence
-                    (Photo)</label>
+                    (Photo)
+                  </label>
                   <div class="flex items-center gap-3">
                     <input type="file" name="items[{{ $currentIndex }}][file]"
                       id="file-upload-{{ $currentIndex }}" accept="image/*" class="file-input-listener hidden">
@@ -658,44 +659,143 @@
             .forEach(r => {
               sub += parseInt(r.value);
             });
+
           totalScore += sub;
+
           const el = document.getElementById('subtotal-' + cat);
           if (el) el.innerText = sub;
         });
 
         document.getElementById('totalScore').innerText = totalScore;
-        const pct = totalItems > 0 ? ((totalScore / (totalItems * 5)) * 100).toFixed(2) : '0.00';
+
+        const pct = totalItems > 0 ?
+          ((totalScore / (totalItems * 5)) * 100).toFixed(2) :
+          '0.00';
+
         document.getElementById('finalScore').value = pct;
 
         const filled = document.querySelectorAll('input[type="radio"]:checked').length;
         document.getElementById('progressCounter').innerText = `${filled} / ${totalItems}`;
       }
 
+      async function compressImage(file, maxWidth = 1280, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+          if (!file || !file.type.startsWith('image/')) {
+            resolve(file);
+            return;
+          }
+
+          const img = new Image();
+          const reader = new FileReader();
+
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          img.onerror = () => reject(new Error('Failed to load image'));
+
+          reader.onload = e => {
+            img.src = e.target.result;
+          };
+
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+              height = Math.round(height * (maxWidth / width));
+              width = maxWidth;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob(
+              blob => {
+                if (!blob) {
+                  reject(new Error('Compression failed'));
+                  return;
+                }
+
+                const compressedFile = new File(
+                  [blob],
+                  file.name.replace(/\.[^/.]+$/, '.jpg'), {
+                    type: 'image/jpeg',
+                    lastModified: Date.now(),
+                  }
+                );
+
+                resolve(compressedFile);
+              },
+              'image/jpeg',
+              quality
+            );
+          };
+
+          reader.readAsDataURL(file);
+        });
+      }
+
       document.querySelectorAll('input[type="radio"]').forEach(r => {
         r.addEventListener('change', calculateTotals);
       });
 
+      // IMPLEMENT FILE INPUT LISTENER
       document.querySelectorAll('.file-input-listener').forEach(input => {
         const wrapper = input.closest('div');
-        const span = wrapper ? wrapper.querySelector('.file-name-display') : null;
+        const fileNameDisplay = wrapper?.querySelector('.file-name-display');
 
-        if (span) {
-          const oldName = span.dataset.oldName || 'No file chosen';
-          span.textContent = oldName;
+        if (fileNameDisplay) {
+          const oldName = fileNameDisplay.dataset.oldName || 'No file chosen';
+          fileNameDisplay.textContent = oldName;
         }
 
-        input.addEventListener('change', function(e) {
-          const span = e.target.closest('div').querySelector('.file-name-display');
-          if (span) {
-            span.textContent = e.target.files.length ?
-              e.target.files[0].name :
-              (span.dataset.oldName || 'No file chosen');
+        input.addEventListener('change', async function(e) {
+          const file = e.target.files?.[0];
+          const currentWrapper = this.closest('div');
+          const currentDisplay = currentWrapper?.querySelector('.file-name-display');
+
+          if (!file) {
+            if (currentDisplay) {
+              currentDisplay.textContent = currentDisplay.dataset.oldName || 'No file chosen';
+            }
+            return;
+          }
+
+          if (currentDisplay) {
+            currentDisplay.textContent = 'Processing...';
+          }
+
+          try {
+            let finalFile = file;
+
+            if (file.type.startsWith('image/')) {
+              finalFile = await compressImage(file);
+            }
+
+            const dt = new DataTransfer();
+            dt.items.add(finalFile);
+            this.files = dt.files;
+
+            if (currentDisplay) {
+              currentDisplay.textContent = finalFile.name;
+            }
+          } catch (error) {
+            console.error('File processing error:', error);
+
+            // fallback: tetap pakai file asli
+            try {
+              const dt = new DataTransfer();
+              dt.items.add(file);
+              this.files = dt.files;
+            } catch (_) {}
+
+            if (currentDisplay) {
+              currentDisplay.textContent = file.name + ' (original)';
+            }
           }
         });
-      });
-
-      window.addEventListener('beforeunload', function(e) {
-        if (isSubmitting) return;
       });
 
       form.addEventListener('submit', function(e) {
@@ -709,16 +809,19 @@
           document.querySelectorAll('.border-danger-highlight').forEach(el => {
             el.classList.remove('border-danger-highlight');
           });
+
           document.querySelectorAll('.score-missing-msg').forEach(el => el.remove());
 
           for (let item of allItems) {
             const checked = Array.from(item.querySelectorAll('input[type="radio"]')).some(r => r.checked);
+
             if (!checked) {
               item.classList.add('border-danger-highlight');
               item.scrollIntoView({
                 behavior: 'smooth',
                 block: 'center'
               });
+
               const msg = document.createElement('p');
               msg.className = 'score-missing-msg text-xs text-red-500 font-semibold mt-2';
               msg.textContent = '⚠️ Score belum dipilih';
@@ -726,6 +829,7 @@
               break;
             }
           }
+
           return;
         }
 
