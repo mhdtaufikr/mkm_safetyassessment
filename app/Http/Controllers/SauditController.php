@@ -83,84 +83,68 @@ class SauditController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validasi input dari form
-        $validated = $request->validate([
-            'shop' => 'required|string|max:255',
-            'date' => 'required|date',
-            'auditor' => 'required|string|max:255',
-            'comments' => 'nullable|string',
-            'items' => 'required|array',
-            'items.*.check_item' => 'required|string',
-            'items.*.description' => 'required|string',
-            // --- PERBAIKAN 1: Mengubah validasi skor menjadi 0-5 ---
-            'items.*.score' => 'required|numeric|between:0,5',
-            'items.*.comment' => 'nullable|string',
-            'items.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xlsx,xls|max:5120',
-        ]);
+        // Ambil semua input tanpa validation
+        $data = $request->all();
 
         $scores = [];
         $totalScore = 0;
         $categoryScores = [];
 
-        // Looping untuk setiap item pertanyaan dari form
-        foreach ($validated['items'] as $index => $item) {
+        // Loop setiap item
+        foreach ($data['items'] as $index => $item) {
             $filePath = null;
 
-            // Logika ini sudah benar, hanya memproses file jika ada
+            // Upload file jika ada
             if ($request->hasFile("items.$index.file")) {
                 $uploadedFile = $request->file("items.$index.file");
                 $newFileName = time() . '_' . Str::random(8) . '.' . $uploadedFile->getClientOriginalExtension();
                 $filePath = $uploadedFile->storeAs('saudit_files', $newFileName, 'public');
             }
 
-            // Memanggil helper function untuk menentukan kategori
+            // Tentukan kategori
             $category = $this->mapIndexToCategory($index);
 
-            // Susun data skor untuk item ini
             $scores[$index] = [
-                'score' => (int) $item['score'],
+                'score' => (int) ($item['score'] ?? 0),
                 'comment' => $item['comment'] ?? '',
-                'check_item' => $item['check_item'],
-                'description' => $item['description'],
-                'file' => $filePath, // Akan null jika tidak ada file
+                'check_item' => $item['check_item'] ?? '',
+                'description' => $item['description'] ?? '',
+                'file' => $filePath,
                 'category' => $category,
             ];
 
-            // Kelompokkan skor berdasarkan kategori
             if ($category) {
                 if (!isset($categoryScores[$category])) {
                     $categoryScores[$category] = [];
                 }
-                $categoryScores[$category][] = (int) $item['score'];
+                $categoryScores[$category][] = (int) ($item['score'] ?? 0);
             }
 
-            // Akumulasi total skor
-            $totalScore += (int) $item['score'];
+            $totalScore += (int) ($item['score'] ?? 0);
         }
 
-        // Hitung rata-rata skor per kategori
+        // Hitung rata-rata kategori
         $averageByCategory = [];
         foreach ($categoryScores as $category => $scoresArray) {
             $averageByCategory[$category] = round(array_sum($scoresArray) / count($scoresArray), 2);
         }
 
-        // --- PERBAIKAN 2: Mengubah perhitungan skor maksimal menjadi * 5 ---
-        $maxTotal = count($validated['items']) * 5;
+        // Hitung final score
+        $maxTotal = count($data['items']) * 5;
         $finalScore = $maxTotal > 0 ? ($totalScore / $maxTotal) * 100 : 0;
 
-        // Simpan semua data ke database
+        // Simpan
         Saudit::create([
-            'shop' => $validated['shop'],
-            'date' => $validated['date'],
-            'auditor' => $validated['auditor'],
+            'shop' => $data['shop'] ?? null,
+            'date' => $data['date'] ?? null,
+            'auditor' => $data['auditor'] ?? null,
             'scores' => $scores,
             'final_score' => $finalScore,
-            'comments' => $validated['comments'],
+            'comments' => $data['comments'] ?? null,
             'score_by_category' => $averageByCategory,
         ]);
 
-        // Redirect ke halaman QR dengan pesan sukses
-        return redirect()->to('/qr/' . urlencode($validated['shop']))->with('success', '5S Audit Successfully Submitted.');
+        return redirect()->to('/qr/' . urlencode($data['shop']))->with('success', '5S Audit Successfully Submitted.');
     }
 
     public function edit($id)
@@ -173,6 +157,15 @@ class SauditController extends Controller
     public function update(Request $request, $id)
     {
         // Get all input data (no validation)
+        $validated = $request->validate([
+            'shop' => 'required|string',
+            'date' => 'required|date',
+            'auditor' => 'required|string',
+            'items' => 'required|array',
+            'comments' => 'nullable|string',
+            'items.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,xlsx,xls|max:5120',
+        ]);
+
         $validated = $request->all();
 
         $audit = Saudit::findOrFail($id);
