@@ -26,6 +26,7 @@ class RiskAssessment extends Model
         'risk_reduction_proposal',
         'file',
         'created_by',
+        'detail_place',
     ];
 
     /**

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Shop;
 use App\Models\RiskAssessment;
 use App\Mail\RiskAssessmentSubmittedMail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 
@@ -35,6 +36,7 @@ class FormController extends Controller
         $severities    = $request->input('severity', []);
         $possibilities = $request->input('possibility', []);
         $proposals     = $request->input('risk_reduction_proposal', []);
+        $detailPlaces     = $request->input('detail_place', []);
         $accessorMain  = trim($request->input('accessor_main'));
 
         $count           = count($scopeNumbers);
@@ -45,11 +47,12 @@ class FormController extends Controller
 
             // ── Skip entry yang benar-benar kosong semua ──────────
             $isEmpty = empty($scopeNumbers[$i])
-                    && empty(trim($findings[$i]      ?? ''))
-                    && empty(trim($hazards[$i]       ?? ''))
-                    && empty($severities[$i])
-                    && empty($possibilities[$i])
-                    && empty(trim($proposals[$i]     ?? ''));
+                && empty(trim($findings[$i]      ?? ''))
+                && empty(trim($hazards[$i]       ?? ''))
+                && empty($severities[$i])
+                && empty($possibilities[$i])
+                && empty(trim($proposals[$i]     ?? ''))
+                && empty(trim($detailPlaces[$i] ?? ''));
 
             if ($isEmpty) continue;
 
@@ -60,7 +63,8 @@ class FormController extends Controller
                 empty(trim($hazards[$i]   ?? '')) ||
                 empty($severities[$i])            ||
                 empty($possibilities[$i])         ||
-                empty(trim($proposals[$i] ?? ''))
+                empty(trim($proposals[$i] ?? '')) ||
+                empty(trim($detailPlaces[$i] ?? ''))
             ) {
                 return back()
                     ->withInput()
@@ -72,10 +76,10 @@ class FormController extends Controller
             $possibilityVal = (int) $possibilities[$i];
             $score          = $severityVal * $possibilityVal;
 
-            if      ($score > 16) $riskLevel = 'Extreme';
-            elseif  ($score >= 10) $riskLevel = 'High';
-            elseif  ($score >= 5)  $riskLevel = 'Medium';
-            elseif  ($score > 0)   $riskLevel = 'Low';
+            if ($score > 16) $riskLevel = 'Extreme';
+            elseif ($score >= 10) $riskLevel = 'High';
+            elseif ($score >= 5)  $riskLevel = 'Medium';
+            elseif ($score > 0)   $riskLevel = 'Low';
             else                   $riskLevel = '';
 
             // ── Upload file (opsional) ────────────────────────────
@@ -115,6 +119,7 @@ class FormController extends Controller
                 'score'                   => $score,
                 'risk_level'              => $riskLevel,
                 'risk_reduction_proposal' => trim($proposals[$i]),
+                'detail_place' => trim($detailPlaces[$i]),
                 'file'                    => $filePath,
                 'date'                    => now()->toDateString(), // ✅ pakai server time
             ]);
@@ -140,7 +145,7 @@ class FormController extends Controller
                     ->cc(['muhammad.taufik@ptmkm.co.id'])
                     ->send(new RiskAssessmentSubmittedMail($firstAssessment));
             } catch (\Throwable $e) {
-                \Log::warning('Risk assessment mail failed: ' . $e->getMessage());
+                Log::warning('Risk assessment mail failed: ' . $e->getMessage());
                 // Tidak re-throw — data sudah tersimpan, tetap lanjut redirect
             }
         }
@@ -149,35 +154,33 @@ class FormController extends Controller
         $shopName = \App\Models\Shop::where('id', $request->shop_id)->value('name');
 
         return redirect('/qr/' . rawurlencode($shopName))
-               ->with('success', "Risk assessment berhasil disimpan! ({$saved} entry tersimpan)");
+            ->with('success', "Risk assessment berhasil disimpan! ({$saved} entry tersimpan)");
     }
 
 
 
     public function indexShop($name)
-{
-    // Decode dari URL (misalnya: Rear%20Axle jadi Rear Axle)
-    $decodedName = urldecode($name);
+    {
+        // Decode dari URL (misalnya: Rear%20Axle jadi Rear Axle)
+        $decodedName = urldecode($name);
 
-    // Cari berdasarkan nama
-    $shop = Shop::where('name', $decodedName)->firstOrFail();
+        // Cari berdasarkan nama
+        $shop = Shop::where('name', $decodedName)->firstOrFail();
 
-    // Cek nama file gambar berdaasassarkan nama shop (opsional, disesuaikan)
-    $shopImage = strtolower(str_replace(' ', '_', $shop->name)) . '.png';
+        // Cek nama file gambar berdaasassarkan nama shop (opsional, disesuaikan)
+        $shopImage = strtolower(str_replace(' ', '_', $shop->name)) . '.png';
 
-    return view('form.shop', [
-    'shopName' => $shop->name,
-    'shopId' => $shop->id,
-    'shopImage' => $shop->image, // Ambil dari DB, bukan dari manipulasi nama manual
-    'shopUpdatedAt' => $shop->updated_at,
-]);
-
-}
+        return view('form.shop', [
+            'shopName' => $shop->name,
+            'shopId' => $shop->id,
+            'shopImage' => $shop->image, // Ambil dari DB, bukan dari manipulasi nama manual
+            'shopUpdatedAt' => $shop->updated_at,
+        ]);
+    }
 
 
     public function qrScan($name)
-{
-    return view('form.scan',compact('name'));
-}
-
+    {
+        return view('form.scan', compact('name'));
+    }
 }

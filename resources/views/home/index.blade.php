@@ -207,6 +207,7 @@
                         <th>Scope</th>
                         <th>Problem</th>
                         <th>Hazard</th>
+                        <th>Detail Place</th> 
                         <th>Accessor</th>
                         <th>Severity</th>
                         <th>Probability</th>
@@ -228,6 +229,7 @@
                         <td>{{ $scopeLabels[$item->scope_number] ?? $item->scope_number }}</td>
                         <td>{{ $item->finding_problem }}</td>
                         <td>{{ $item->potential_hazards }}</td>
+                        <td>{{ $item->detail_place ?? '-' }}</td>
                         <td>{{ $item->accessor}}</td>
                         <td>{{ $severityLabels[$item->severity] ?? $item->severity }}</td>
                         <td>{{ $possibilityLabels[$item->possibility] ?? $item->possibility }}</td>
