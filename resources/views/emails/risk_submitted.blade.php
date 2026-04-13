@@ -13,6 +13,10 @@ We would like to inform you that a <strong>New Risk Assessment</strong> has been
             <td>{{ $assessment->shop->name ?? 'N/A' }}</td>
         </tr>
         <tr>
+            <th align="left">Detail Place</th>
+            <td>{{ $assessment->detail_place ?? 'N/A' }}</td>
+        </tr>
+        <tr>
             <th align="left">Scope</th>
             <td>{{ $assessment->scope_number }}</td>
         </tr>
