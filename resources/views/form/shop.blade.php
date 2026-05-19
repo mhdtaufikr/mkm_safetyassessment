@@ -451,6 +451,59 @@
       const submitButtons = document.querySelectorAll('button.submit-btn');
       let entryIndex = 1;
       let isSubmitting = false;
+      const scopeGuidance = {
+        1: [
+          'Do the operators wear PPE',
+          'Is the operator in good physical condition',
+          'Is the operator operating in accordance with its license and authority',
+          'Is the Operator Movement safe',
+        ],
+        2: [
+          'Are the machines/equipment in normal working order during operation',
+          "Are the machine's safety devices working?",
+          'Are there any unreported changes to the equipment specifications',
+        ],
+        3: [
+          'Does the work method comply with the SOP',
+          "Are the operator's movements safe?",
+          "Does the operator's workload seem excessive?",
+          'Are the condition of the hazard warning signs and their placement appropriate and adequate',
+          'Does the condition of the safety warning sign meet the standard',
+        ],
+        4: [
+          'Is the material securely in place',
+          'Is the MSDS available',
+        ],
+        5: [
+          'Is the condition of the floor surface good',
+          'Is the workplace noisy',
+          'Is the workplace noisy',
+          'Is the lighting in the workplace adequate',
+          'Is there any radiation exposure',
+          'Is there excessive smoke and dust in the work area',
+          'Does the condition of the building--including the roof and walls--appear to be well-maintained',
+        ],
+      };
+
+      function updateScopeGuidance(scopeSelect) {
+        const guidanceEl = scopeSelect.closest('.entry-card-inner')?.querySelector('.scope-guidance');
+        if (!guidanceEl) return;
+
+        const notes = scopeGuidance[scopeSelect.value] || [];
+        if (!notes.length) {
+          guidanceEl.classList.add('hidden');
+          guidanceEl.innerHTML = '';
+          return;
+        }
+
+        guidanceEl.classList.remove('hidden');
+        guidanceEl.innerHTML = `
+          <p class="mb-1 font-bold text-slate-500">Note:</p>
+          <ul class="grid gap-x-5 gap-y-1 pl-4 sm:grid-cols-2">
+            ${notes.map(note => `<li class="list-disc">${note}</li>`).join('')}
+          </ul>
+        `;
+      }
 
       // ─── Risk level style ────────────────────────────────
       function applyRiskStyle(el, value) {
@@ -534,6 +587,8 @@
                        placeholder="Describe the finding...">
                 <div class="invalid-feedback"></div>
               </div>
+
+              <div class="scope-guidance hidden lg:col-span-12 -mt-1 rounded-lg border-l-4 border-slate-200 bg-slate-50/70 px-3 py-2 text-xs leading-relaxed text-slate-500"></div>
 
               <!-- Potential Hazard -->
               <div class="lg:col-span-4">
@@ -680,6 +735,7 @@
           if (preset.possibility != null) prob.value = preset.possibility;
           if (preset.proposal != null) propInp.value = preset.proposal;
           if (preset.detailPlace != null) detailPlace.value = preset.detailPlace;
+          updateScopeGuidance(scopeSel);
           updateRisk();
         }
 
@@ -695,13 +751,18 @@
             if (el.classList.contains('field-invalid')) validateField(el);
           });
         });
+
+        const scopeSelect = div.querySelector('select[name="scope_number[]"]');
+        scopeSelect.addEventListener('change', function() {
+          updateScopeGuidance(scopeSelect);
+        });
       }
 
       // ─── Inline field validation ─────────────────────────
       function validateField(el) {
         const val = el.tagName === 'SELECT' ? el.value : (el.value || '').trim();
         const ok = val !== '' && val !== null;
-        const fb = el.nextElementSibling;
+        const fb = el.parentElement?.querySelector('.invalid-feedback');
         if (!ok) {
           el.classList.add('field-invalid');
           if (fb && fb.classList.contains('invalid-feedback')) {
@@ -721,7 +782,7 @@
         if (isEntryCompletelyEmpty(card)) {
           card.querySelectorAll('.entry-required').forEach(el => {
             el.classList.remove('field-invalid');
-            const fb = el.nextElementSibling;
+            const fb = el.parentElement?.querySelector('.invalid-feedback');
             if (fb && fb.classList.contains('invalid-feedback')) fb.textContent = '';
           });
           return true;
